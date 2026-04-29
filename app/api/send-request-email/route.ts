@@ -1,4 +1,4 @@
-import {NextResponse} from 'next/server';
+﻿import {NextResponse} from 'next/server';
 import {Resend} from 'resend';
 
 function getResendClient() {
@@ -36,18 +36,18 @@ export async function POST(request: Request) {
       from: getResendFromAddress('Restnutzungsdauer-Gutachten'),
       to: [email],
       replyTo: getReplyTo(),
-      subject: 'Ihre Anfrage fuer ein Restnutzungsdauer-Gutachten',
+      subject: 'Ihre Anfrage für ein Restnutzungsdauer-Gutachten',
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>Hallo ${name},</h2>
-          <p>vielen Dank fuer Ihre Anfrage. Wir haben Ihre Daten und Dokumente erfolgreich erhalten.</p>
+          <p>vielen Dank für Ihre Anfrage. Wir haben Ihre Daten und Dokumente erfolgreich erhalten.</p>
           <p><strong>Ihre Angaben:</strong></p>
           <ul>
             <li><strong>Immobilie:</strong> ${address}</li>
             <li><strong>Baujahr:</strong> ${year || 'Nicht angegeben'}</li>
             <li><strong>Hochgeladene Dokumente:</strong> ${documentsCount}</li>
           </ul>
-          <p>Wir werden Ihre Unterlagen nun pruefen und uns in Kuerze mit den naechsten Schritten bei Ihnen melden.</p>
+          <p>Wir werden Ihre Unterlagen nun prüfen und uns in Kürze mit den naechsten Schritten bei Ihnen melden.</p>
           <p>Mit freundlichen Gruessen,<br />Ihr Gutachten-Team</p>
         </div>
       `,
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
             <h2>Neue Anfrage eingegangen!</h2>
-            <p>Ein neuer Kunde hat eine Anfrage fuer ein Restnutzungsdauer-Gutachten gestellt.</p>
+            <p>Ein neuer Kunde hat eine Anfrage für ein Restnutzungsdauer-Gutachten gestellt.</p>
             <p><strong>Kundendaten:</strong></p>
             <ul>
               <li><strong>Name:</strong> ${name}</li>
@@ -87,3 +87,4 @@ export async function POST(request: Request) {
     return NextResponse.json({error: 'Failed to send email'}, {status: 500});
   }
 }
+

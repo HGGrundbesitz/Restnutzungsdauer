@@ -6,6 +6,7 @@ import TrustedBy from '@/components/TrustedBy';
 import ValueProposition from '@/components/ValueProposition';
 import HowItWorks from '@/components/HowItWorks';
 import AboutUs from '@/components/AboutUs';
+import QuickCheck from '@/components/QuickCheck';
 import RequestForm from '@/components/RequestForm';
 import FAQ from '@/components/FAQ';
 import CTA from '@/components/CTA';
@@ -31,6 +32,7 @@ export default function Home() {
       <Hero />
 
       <div className="relative z-10 w-full">
+        <QuickCheck />
         <TrustedBy />
         <ValueProposition />
         <HowItWorks />
@@ -43,3 +45,5 @@ export default function Home() {
     </main>
   );
 }
+
+

@@ -1,4 +1,4 @@
-import {NextResponse} from 'next/server';
+﻿import {NextResponse} from 'next/server';
 import {GoogleGenAI} from '@google/genai';
 
 export const runtime = 'nodejs';
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
             },
           },
           {
-            text: 'Analysiere dieses Dokument fuer ein Immobiliengutachten. Extrahiere folgende Informationen, falls vorhanden: Baujahr, Wohnflaeche, Grundstuecksflaeche, Immobilientyp, erkannte Maengel oder Besonderheiten. Antworte in einem kurzen, uebersichtlichen Format auf Deutsch. Verwende Markdown fuer die Formatierung.',
+            text: 'Analysiere dieses Dokument für ein Immobiliengutachten. Extrahiere folgende Informationen, falls vorhanden: Baujahr, Wohnflaeche, Grundstuecksflaeche, Immobilientyp, erkannte Maengel oder Besonderheiten. Antworte in einem kurzen, uebersichtlichen Format auf Deutsch. Verwende Markdown für die Formatierung.',
           },
         ],
       },
@@ -58,3 +58,4 @@ export async function POST(request: Request) {
     return NextResponse.json({error: 'Fehler bei der KI-Analyse'}, {status: 500});
   }
 }
+

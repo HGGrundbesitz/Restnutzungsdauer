@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {motion} from 'motion/react';
 
@@ -6,22 +6,22 @@ const faqs = [
   {
     question: 'Was ist ein Restnutzungsdauer-Gutachten?',
     answer:
-      'Ein Gutachten, das die tatsaechliche verbleibende Nutzungsdauer Ihrer Immobilie ermittelt, statt pauschal 50 Jahre anzusetzen. Dadurch kann sich die jaehrliche Abschreibung oft deutlich erhoehen.',
+      'Ein Gutachten, das die tatsächliche verbleibende Nutzungsdauer Ihrer Immobilie ermittelt, statt pauschal 50 Jahre anzusetzen. Dadurch kann sich die jährliche Abschreibung oft deutlich erhöhen.',
   },
   {
-    question: 'Fuer wen lohnt sich ein Gutachten?',
+    question: 'Für wen lohnt sich ein Gutachten?',
     answer:
-      'Fuer private und gewerbliche Immobilienbesitzer, deren Gebaeude aelter sind oder eine kuerzere tatsaechliche Nutzungsdauer aufweisen, als gesetzlich unterstellt wird.',
+      'Für private und gewerbliche Immobilienbesitzer, deren Gebäude älter sind oder eine kürzere tatsächliche Nutzungsdauer aufweisen, als gesetzlich unterstellt wird.',
   },
   {
-    question: 'Welche Unterlagen werden benoetigt?',
+    question: 'Welche Unterlagen werden benötigt?',
     answer:
       'Meist reichen im ersten Schritt grundlegende Objektdaten, ein aktueller Grundbuchauszug und Objektfotos. Weitere Unterlagen besprechen wir bei Bedarf individuell.',
   },
   {
     question: 'Wie erhalte ich das fertige Gutachten?',
     answer:
-      'Nach Abschluss der Pruefung erhalten Sie Ihr Gutachten digital und koennen es strukturiert in Ihren steuerlichen Prozess uebernehmen.',
+      'Nach Abschluss der Prüfung erhalten Sie Ihr Gutachten digital und können es strukturiert in Ihren steuerlichen Prozess übernehmen.',
   },
 ];
 
@@ -36,7 +36,7 @@ export default function FAQ() {
         className="mb-16 text-center"
       >
         <h2 className="mb-4 font-heading text-3xl font-semibold tracking-tight text-[var(--color-ink)] md:text-4xl">
-          Haeufig gestellte Fragen
+          Häufig gestellte Fragen
         </h2>
         <p className="mx-auto max-w-2xl text-lg font-light text-[var(--color-text-muted)]">
           Antworten auf die wichtigsten Fragen rund um das RND-Gutachten.
@@ -63,3 +63,5 @@ export default function FAQ() {
     </section>
   );
 }
+
+

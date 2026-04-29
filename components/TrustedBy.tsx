@@ -1,10 +1,10 @@
-import {Shield, MessageCircle, Server, UserCheck} from 'lucide-react';
+﻿import {Shield, MessageCircle, Server, UserCheck} from 'lucide-react';
 
 const trustItems = [
   {icon: Shield, label: 'Diskrete Abwicklung'},
-  {icon: MessageCircle, label: 'Verstaendliche Kommunikation'},
+  {icon: MessageCircle, label: 'Verständliche Kommunikation'},
   {icon: Server, label: 'Sichere Datenbehandlung'},
-  {icon: UserCheck, label: 'Professionelle Pruefung'},
+  {icon: UserCheck, label: 'Professionelle Prüfung'},
 ];
 
 export default function TrustedBy() {
@@ -40,3 +40,4 @@ export default function TrustedBy() {
     </section>
   );
 }
+

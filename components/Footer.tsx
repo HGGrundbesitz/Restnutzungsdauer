@@ -1,8 +1,8 @@
-export default function Footer() {
+﻿export default function Footer() {
   return (
-    <footer className="relative z-10 border-t border-[var(--color-border)] bg-[var(--color-bg)] pb-10 pt-20">
-      <div className="mx-auto max-w-[1400px] px-6">
-        <div className="mb-20 grid grid-cols-1 gap-12 md:grid-cols-12">
+    <footer className="relative z-10 border-t border-[var(--color-border)] bg-[var(--color-bg)] pb-10 pt-16 sm:pt-20">
+      <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
+        <div className="mb-16 grid grid-cols-1 gap-10 md:mb-20 md:grid-cols-12 md:gap-12">
           <div className="md:col-span-4 flex flex-col items-start">
             <a href="#" className="flex items-center gap-3 group">
               <span className="font-heading text-lg font-semibold uppercase tracking-tight text-[var(--color-ink)]">
@@ -10,7 +10,7 @@ export default function Footer() {
               </span>
             </a>
             <p className="mt-6 max-w-sm text-sm font-light leading-relaxed text-[var(--color-text-muted)]">
-              Ihr digitaler Partner fuer finanzamtsnahe Restnutzungsdauer-Gutachten. Wir helfen Immobilienbesitzern,
+              Ihr digitaler Partner für finanzamtsnahe Restnutzungsdauer-Gutachten. Wir helfen Immobilienbesitzern,
               ihre Steuerlast effizient und legal zu senken.
             </p>
           </div>
@@ -56,3 +56,5 @@ export default function Footer() {
     </footer>
   );
 }
+
+

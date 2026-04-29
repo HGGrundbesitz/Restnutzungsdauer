@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {useState} from 'react';
 import {motion} from 'motion/react';
@@ -6,8 +6,27 @@ import Markdown from 'react-markdown';
 import {Calendar, Download, FileText, Loader2, Mail, MapPin, Sparkles, Trash2, User, X} from 'lucide-react';
 import {supabase} from '@/lib/supabase';
 
+type QuickCheckAnswer = {
+  label: string;
+  value: string;
+};
+
+type RequestRecord = {
+  id: string;
+  created_at: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  address: string;
+  year: number | null;
+  status: 'pending' | 'reviewing' | 'completed';
+  documents?: string[];
+  source?: string | null;
+  quick_check_answers?: QuickCheckAnswer[] | null;
+};
+
 type RequestDetailsPanelProps = {
-  request: any;
+  request: RequestRecord;
   onClose: () => void;
   onUpdateStatus: (id: string, status: string) => void;
   onDelete: (id: string) => void;
@@ -130,7 +149,7 @@ export default function RequestDetailsPanel({
                     request.status === status ? 'bg-[var(--color-btn-bg)] text-[var(--color-btn-text)]' : 'admin-ghost-btn'
                   }`}
                 >
-                  {status === 'pending' ? 'Neu' : status === 'reviewing' ? 'Pruefung' : 'Fertig'}
+                  {status === 'pending' ? 'Neu' : status === 'reviewing' ? 'Prüfung' : 'Fertig'}
                 </button>
               ))}
             </div>
@@ -141,7 +160,9 @@ export default function RequestDetailsPanel({
             <div className="grid gap-4">
               <InfoRow icon={<User size={16} />} label="Name" value={request.name} />
               <InfoRow icon={<Mail size={16} />} label="E-Mail" value={request.email} />
+              {request.phone ? <InfoRow icon={<Mail size={16} />} label="Telefon" value={request.phone} /> : null}
               <InfoRow icon={<Calendar size={16} />} label="Eingang" value={new Date(request.created_at).toLocaleString('de-DE')} />
+              <InfoRow icon={<Sparkles size={16} />} label="Quelle" value={getSourceLabel(request.source)} />
             </div>
           </div>
 
@@ -152,6 +173,22 @@ export default function RequestDetailsPanel({
               <InfoRow icon={<Calendar size={16} />} label="Baujahr" value={request.year || 'Nicht angegeben'} />
             </div>
           </div>
+
+          {request.quick_check_answers && request.quick_check_answers.length > 0 ? (
+            <div className="mb-8 space-y-5">
+              <SectionTitle title="Schnellcheck" />
+              <div className="grid gap-3">
+                {request.quick_check_answers.map((answer) => (
+                  <div key={answer.label} className="admin-card-muted rounded-[1.15rem] px-4 py-3">
+                    <div className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+                      {answer.label}
+                    </div>
+                    <div className="mt-1 text-sm text-[var(--color-ink)]">{answer.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           <div className="mb-8 space-y-4">
             <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-2">
@@ -224,7 +261,7 @@ export default function RequestDetailsPanel({
             <h3 className="text-sm font-semibold text-red-600">Gefahrenzone</h3>
             <div className="mt-3 rounded-[1.3rem] border border-red-200/60 bg-red-50/70 p-4">
               <p className="mb-3 text-xs leading-6 text-red-600">
-                Das Loeschen entfernt die Anfrage und alle zugehoerigen Daten dauerhaft.
+                Das Löschen entfernt die Anfrage und alle zugehörigen Daten dauerhaft.
               </p>
               <button
                 onClick={() => onDelete(request.id)}
@@ -241,6 +278,9 @@ export default function RequestDetailsPanel({
   );
 }
 
+function getSourceLabel(source?: string | null) {
+  return source === 'quick_check' ? 'Schnellcheck' : 'Anfrageformular';
+}
 function SectionTitle({title, borderless = false}: {title: string; borderless?: boolean}) {
   return (
     <h3 className={`${borderless ? '' : 'border-b border-[var(--color-border)] pb-2'} text-[11px] font-extrabold uppercase tracking-[0.18em] text-[var(--color-text-muted)]`}>
@@ -260,3 +300,5 @@ function InfoRow({icon, label, value}: {icon: React.ReactNode; label: string; va
     </div>
   );
 }
+
+

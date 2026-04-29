@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {useState} from 'react';
 import {ArrowLeft, ArrowRight, Eye, EyeOff, Loader2, LockKeyhole, Mail} from 'lucide-react';
@@ -6,7 +6,11 @@ import AdminAuthShell from './AdminAuthShell';
 import {getAdminResetRedirectUrl, getAuthErrorMessage} from '@/lib/admin-auth';
 import {isSupabaseConfigured, supabase} from '@/lib/supabase';
 
-export default function AdminLogin() {
+type AdminLoginProps = {
+  externalError?: string | null;
+};
+
+export default function AdminLogin({externalError = null}: AdminLoginProps) {
   const [mode, setMode] = useState<'login' | 'reset'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -15,6 +19,8 @@ export default function AdminLogin() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const visibleError = error ?? externalError;
+
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -22,7 +28,7 @@ export default function AdminLogin() {
     setSuccess(null);
 
     if (!isSupabaseConfigured) {
-      setError('Supabase ist lokal nicht konfiguriert. Bitte legen Sie eine gueltige .env.local mit URL und Anon Key an und starten Sie den Dev-Server neu.');
+      setError('Supabase ist lokal nicht konfiguriert. Bitte legen Sie eine gültige .env.local mit URL und Anon Key an und starten Sie den Dev-Server neu.');
       setLoading(false);
       return;
     }
@@ -39,7 +45,7 @@ export default function AdminLogin() {
         return;
       }
     } catch {
-      setError('Supabase konnte nicht erreicht werden. Bitte pruefen Sie Ihre .env.local, Ihre Internetverbindung und starten Sie den Dev-Server neu.');
+      setError('Supabase konnte nicht erreicht werden. Bitte prüfen Sie Ihre .env.local, Ihre Internetverbindung und starten Sie den Dev-Server neu.');
       setLoading(false);
       return;
     }
@@ -52,7 +58,7 @@ export default function AdminLogin() {
     setSuccess(null);
 
     if (!isSupabaseConfigured) {
-      setError('Supabase ist lokal nicht konfiguriert. Bitte legen Sie eine gueltige .env.local mit URL und Anon Key an und starten Sie den Dev-Server neu.');
+      setError('Supabase ist lokal nicht konfiguriert. Bitte legen Sie eine gültige .env.local mit URL und Anon Key an und starten Sie den Dev-Server neu.');
       setLoading(false);
       return;
     }
@@ -68,19 +74,19 @@ export default function AdminLogin() {
         return;
       }
     } catch {
-      setError('Der Reset-Link konnte nicht angefordert werden. Bitte pruefen Sie Ihre Verbindung und starten Sie den Dev-Server neu.');
+      setError('Der Reset-Link konnte nicht angefordert werden. Bitte prüfen Sie Ihre Verbindung und starten Sie den Dev-Server neu.');
       setLoading(false);
       return;
     }
 
-    setSuccess('Der Reset-Link wurde versendet. Bitte pruefen Sie Ihr Postfach und folgen Sie dem Link zum neuen Passwort.');
+    setSuccess('Der Reset-Link wurde versendet. Bitte prüfen Sie Ihr Postfach und folgen Sie dem Link zum neuen Passwort.');
     setLoading(false);
   };
 
   return (
     <AdminAuthShell
       cardEyebrow={mode === 'login' ? 'Admin Login' : 'Passwort Reset'}
-      cardTitle={mode === 'login' ? 'Willkommen zurueck' : 'Passwort zuruecksetzen'}
+      cardTitle={mode === 'login' ? 'Willkommen zurück' : 'Passwort zurücksetzen'}
       cardDescription={
         mode === 'login'
           ? 'Melden Sie sich an, um Anfragen, Dokumente und Status im Adminbereich zu verwalten.'
@@ -146,7 +152,7 @@ export default function AdminLogin() {
             </div>
           </div>
 
-          {error && <div className="rounded-[1rem] border border-red-200/70 bg-red-50/80 p-4 text-sm text-red-600">{error}</div>}
+          {visibleError && <div className="rounded-[1rem] border border-red-200/70 bg-red-50/80 p-4 text-sm text-red-600">{visibleError}</div>}
           {success && (
             <div className="rounded-[1rem] border border-emerald-200/70 bg-emerald-50/80 p-4 text-sm text-emerald-700">{success}</div>
           )}
@@ -159,7 +165,7 @@ export default function AdminLogin() {
             {loading ? (
               <>
                 <Loader2 size={18} className="animate-spin" />
-                Anmeldung laeuft
+                Anmeldung läuft
               </>
             ) : (
               <>
@@ -188,10 +194,10 @@ export default function AdminLogin() {
           </div>
 
           <div className="rounded-[1rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-sm leading-7 text-[var(--color-text-muted)]">
-            Der Reset-Link wird an diese Adresse gesendet. Von dort koennen Sie Ihr Passwort direkt neu setzen.
+            Der Reset-Link wird an diese Adresse gesendet. Von dort können Sie Ihr Passwort direkt neu setzen.
           </div>
 
-          {error && <div className="rounded-[1rem] border border-red-200/70 bg-red-50/80 p-4 text-sm text-red-600">{error}</div>}
+          {visibleError && <div className="rounded-[1rem] border border-red-200/70 bg-red-50/80 p-4 text-sm text-red-600">{visibleError}</div>}
           {success && (
             <div className="rounded-[1rem] border border-emerald-200/70 bg-emerald-50/80 p-4 text-sm text-emerald-700">{success}</div>
           )}
@@ -224,7 +230,7 @@ export default function AdminLogin() {
             className="admin-ghost-btn flex w-full items-center justify-center gap-2 rounded-[1rem] px-4 py-3.5 text-sm font-semibold"
           >
             <ArrowLeft size={18} />
-            Zurueck zum Login
+            Zurück zum Login
           </button>
         </form>
       )}

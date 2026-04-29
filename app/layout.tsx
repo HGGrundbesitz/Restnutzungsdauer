@@ -1,10 +1,10 @@
-import type {Metadata} from 'next';
+﻿import type {Metadata} from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Restnutzungsdauer-Gutachten | Digital, diskret, finanzamtsfest',
   description:
-    'Digitale Restnutzungsdauer-Gutachten fuer Immobilienbesitzer, die Abschreibung, Klarheit und einen sauberen Prozess wollen.',
+    'Digitale Restnutzungsdauer-Gutachten für Immobilienbesitzer, die Abschreibung, Klarheit und einen sauberen Prozess wollen.',
 };
 
 const themeInitScript = `
@@ -32,3 +32,4 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
     </html>
   );
 }
+

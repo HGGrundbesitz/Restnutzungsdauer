@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {BadgeCheck, Banknote, CheckCircle, Image as ImageIcon, Laptop, Ruler, Stamp, Upload} from 'lucide-react';
 import {motion} from 'motion/react';
@@ -18,11 +18,11 @@ export default function ValueProposition() {
           Ihr Vorteil
         </div>
         <h2 className="section-title mb-4 !text-[clamp(2.4rem,5vw,4.5rem)]">
-          Warum sich der Prozess fuer Eigentuemer wirklich lohnt
+          Warum sich der Prozess für Eigentümer wirklich lohnt
         </h2>
         <p className="section-copy mx-auto max-w-3xl">
-          Mehr als nur ein schoenes PDF: Das Gutachten soll wirtschaftlich Sinn ergeben, nachvollziehbar aufbereitet sein
-          und sich fuer Sie im Alltag nicht nach Zusatzstress anfuehlen.
+          Mehr als nur ein schönes PDF: Das Gutachten soll wirtschaftlich Sinn ergeben, nachvollziehbar aufbereitet sein
+          und sich für Sie im Alltag nicht nach Zusatzstress anfühlen.
         </p>
       </motion.div>
 
@@ -44,8 +44,8 @@ export default function ValueProposition() {
                 Deutliche steuerliche Vorteile
               </h3>
               <p className="text-lg leading-relaxed text-[var(--color-text-muted)]">
-                Statt bei der pauschalen Abschreibung zu bleiben, laesst sich mit einem guten Gutachten haeufig ein
-                deutlich realitaetsnaeherer Satz begruenden. Das wirkt direkt auf Steuerlast und Cashflow.
+                Statt bei der pauschalen Abschreibung zu bleiben, lässt sich mit einem guten Gutachten häufig ein
+                deutlich realitätsnäherer Satz begruenden. Das wirkt direkt auf Steuerlast und Cashflow.
               </p>
             </div>
           </div>
@@ -113,7 +113,7 @@ export default function ValueProposition() {
                 Professionelle Bearbeitung
               </h3>
               <p className="text-base leading-relaxed text-[var(--color-text-muted)]">
-                Unsere Gutachten werden nachvollziehbar, serioes und finanzamtsnah erstellt. Nicht laut, sondern sauber.
+                Unsere Gutachten werden nachvollziehbar, seriös und finanzamtsnah erstellt. Nicht laut, sondern sauber.
               </p>
             </div>
           </div>
@@ -161,7 +161,7 @@ export default function ValueProposition() {
                 Einfach und digital
               </h3>
               <p className="text-base leading-relaxed text-[var(--color-text-muted)]">
-                Kein unnoetiger Papierkram. Ein ruhiger, strukturierter Ablauf vom Upload bis zur Auslieferung.
+                Kein unnötiger Papierkram. Ein ruhiger, strukturierter Ablauf vom Upload bis zur Auslieferung.
               </p>
             </div>
           </div>
@@ -205,7 +205,7 @@ export default function ValueProposition() {
               Realistischer Abschreibungszeitraum
             </h3>
             <p className="max-w-lg text-base leading-relaxed text-[var(--color-text-muted)]">
-              Statt pauschal von 50 Jahren auszugehen, wird der tatsaechliche Zustand des Objekts sauber hergeleitet.
+              Statt pauschal von 50 Jahren auszugehen, wird der tatsächliche Zustand des Objekts sauber hergeleitet.
             </p>
           </div>
 
@@ -241,3 +241,4 @@ export default function ValueProposition() {
     </section>
   );
 }
+

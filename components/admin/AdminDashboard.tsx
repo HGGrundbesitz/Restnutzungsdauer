@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {AnimatePresence, motion} from 'motion/react';
@@ -30,15 +30,23 @@ import DeleteConfirmationModal from './DeleteConfirmationModal';
 import RequestDetailsPanel from './RequestDetailsPanel';
 import {ToastContainer, ToastProps, ToastType} from './Toast';
 
+type QuickCheckAnswer = {
+  label: string;
+  value: string;
+};
+
 type Request = {
   id: string;
   created_at: string;
   name: string;
   email: string;
+  phone?: string | null;
   address: string;
   year: number | null;
   status: 'pending' | 'reviewing' | 'completed';
   documents: string[];
+  source?: string | null;
+  quick_check_answers?: QuickCheckAnswer[] | null;
 };
 
 export default function AdminDashboard({session}: {session: any}) {
@@ -148,10 +156,10 @@ export default function AdminDashboard({session}: {session: any}) {
       if (selectedRequest?.id === requestToDelete) {
         setSelectedRequest(null);
       }
-      addToast('Anfrage erfolgreich geloescht', 'success');
+      addToast('Anfrage erfolgreich gelöscht', 'success');
     } else {
       console.error('Error deleting request:', error);
-      addToast('Fehler beim Loeschen der Anfrage', 'error');
+      addToast('Fehler beim Löschen der Anfrage', 'error');
     }
 
     setIsDeleting(false);
@@ -199,10 +207,12 @@ export default function AdminDashboard({session}: {session: any}) {
   }, [requests]);
 
   const exportToCSV = () => {
-    const headers = ['Name', 'E-Mail', 'Adresse', 'Baujahr', 'Status', 'Datum', 'Dokumente'];
+    const headers = ['Name', 'E-Mail', 'Telefon', 'Quelle', 'Adresse', 'Baujahr', 'Status', 'Datum', 'Dokumente'];
     const csvData = filteredRequests.map((req) => [
       req.name,
       req.email,
+      req.phone || 'Nicht angegeben',
+      getSourceLabel(req.source),
       req.address,
       req.year || 'Nicht angegeben',
       req.status,
@@ -247,14 +257,14 @@ export default function AdminDashboard({session}: {session: any}) {
               Interner Bereich
             </div>
             <p className="mt-3 text-sm leading-7 text-[var(--color-text-muted)]">
-              Anfragen sichten, Dokumente pruefen und Status sauber pflegen.
+              Anfragen sichten, Dokumente prüfen und Status sauber pflegen.
             </p>
           </div>
 
           <nav className="mt-5 grid gap-2">
             <button className="admin-solid-btn flex items-center gap-3 rounded-[1.15rem] px-4 py-3 text-sm font-semibold">
               <LayoutDashboard size={18} />
-              Uebersicht
+              Übersicht
             </button>
             <Link
               href="/"
@@ -309,7 +319,7 @@ export default function AdminDashboard({session}: {session: any}) {
                     Anfragen verwalten
                   </h1>
                   <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-text-muted)]">
-                    Behalten Sie den Ueberblick ueber eingegangene Gutachten-Anfragen, Dokumente und aktuelle Bearbeitungsstaende.
+                    Behalten Sie den Überblick über eingegangene Gutachten-Anfragen, Dokumente und aktuelle Bearbeitungsstände.
                   </p>
                 </div>
 
@@ -382,7 +392,7 @@ export default function AdminDashboard({session}: {session: any}) {
                     <h2 className="font-heading text-xl font-semibold tracking-[-0.04em] text-[var(--color-ink)]">
                       Anfragen der letzten 7 Tage
                     </h2>
-                    <p className="text-sm text-[var(--color-text-muted)]">Tagesansicht fuer neue Eingaben im System</p>
+                    <p className="text-sm text-[var(--color-text-muted)]">Tagesansicht für neue Eingaben im System</p>
                   </div>
                 </div>
 
@@ -431,7 +441,7 @@ export default function AdminDashboard({session}: {session: any}) {
                 <div className="admin-card-muted mt-6 rounded-[1.5rem] p-4">
                   <div className="text-sm font-semibold text-[var(--color-ink)]">Hinweis</div>
                   <p className="mt-2 text-sm leading-7 text-[var(--color-text-muted)]">
-                    Oeffnen Sie eine Anfrage, um Status, Dokumente und Analysen im Detail zu bearbeiten.
+                    Öffnen Sie eine Anfrage, um Status, Dokumente und Analysen im Detail zu bearbeiten.
                   </p>
                 </div>
               </div>
@@ -501,6 +511,9 @@ export default function AdminDashboard({session}: {session: any}) {
                           <td className="px-6 py-4">
                             <div className="font-semibold text-[var(--color-ink)]">{req.name}</div>
                             <div className="mt-1 text-sm text-[var(--color-text-muted)]">{req.email}</div>
+                            <div className="mt-2">
+                              <SourceBadge source={req.source} />
+                            </div>
                           </td>
                           <td className="px-6 py-4">
                             <div className="max-w-[260px] truncate text-sm text-[var(--color-ink)]">{req.address}</div>
@@ -683,6 +696,25 @@ function QuickStatus({label, value, tone}: {label: string; value: number; tone: 
   );
 }
 
+function getSourceLabel(source?: string | null) {
+  return source === 'quick_check' ? 'Schnellcheck' : 'Anfrageformular';
+}
+
+function SourceBadge({source}: {source?: string | null}) {
+  const isQuickCheck = source === 'quick_check';
+
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.16em] ${
+        isQuickCheck
+          ? 'border-[var(--color-accent-soft)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
+          : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)]'
+      }`}
+    >
+      {getSourceLabel(source)}
+    </span>
+  );
+}
 function StatusBadge({status}: {status: string}) {
   const styles = {
     pending: 'border-amber-200/60 bg-amber-50 text-amber-700',
@@ -708,3 +740,6 @@ function StatusBadge({status}: {status: string}) {
     </span>
   );
 }
+
+
+

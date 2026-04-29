@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {PenSquare, FilePlus, ZoomIn, Banknote} from 'lucide-react';
 import {motion, useScroll, useTransform} from 'motion/react';
@@ -30,7 +30,7 @@ export default function HowItWorks() {
           So einfach funktioniert es
         </h2>
         <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-[var(--color-text-muted)] md:text-xl">
-          Ein sauberer Ablauf mit wenig Reibung: kurze Anfrage, strukturierter Upload, klare Rueckmeldung und digitale Auslieferung.
+          Ein sauberer Ablauf mit wenig Reibung: kurze Anfrage, strukturierter Upload, klare Rückmeldung und digitale Auslieferung.
         </p>
       </motion.div>
 
@@ -58,7 +58,7 @@ export default function HowItWorks() {
           {
             step: 'Schritt 01',
             title: 'Anfrage stellen',
-            copy: 'Uebermitteln Sie uns die Basisdaten Ihrer Immobilie ueber das Formular. Schnell, unkompliziert und ohne Vorab-Papierkrieg.',
+            copy: 'Übermitteln Sie uns die Basisdaten Ihrer Immobilie über das Formular. Schnell, unkompliziert und ohne Vorab-Papierkrieg.',
             icon: PenSquare,
             align: 'right',
           },
@@ -71,15 +71,15 @@ export default function HowItWorks() {
           },
           {
             step: 'Schritt 03',
-            title: 'Pruefung und Erstellung',
-            copy: 'Unsere Gutachter pruefen die Unterlagen sorgfaeltig und leiten die tatsaechliche Restnutzungsdauer nachvollziehbar her.',
+            title: 'Prüfung und Erstellung',
+            copy: 'Unsere Gutachter prüfen die Unterlagen sorgfältig und leiten die tatsächliche Restnutzungsdauer nachvollziehbar her.',
             icon: ZoomIn,
             align: 'right',
           },
           {
             step: 'Schritt 04',
             title: 'Gutachten erhalten',
-            copy: 'Sie erhalten das finale Gutachten digital und koennen es sauber in Ihren steuerlichen Prozess uebernehmen.',
+            copy: 'Sie erhalten das finale Gutachten digital und können es sauber in Ihren steuerlichen Prozess übernehmen.',
             icon: Banknote,
             align: 'left',
           },
@@ -133,3 +133,5 @@ function StepCard({step, title, copy}: {step: string; title: string; copy: strin
     </div>
   );
 }
+
+

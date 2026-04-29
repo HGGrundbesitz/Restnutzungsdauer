@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {useRef, useState} from 'react';
 import {AnimatePresence, motion} from 'motion/react';
@@ -106,7 +106,7 @@ export default function RequestForm() {
       setFiles([]);
     } catch (submitError) {
       console.error('Error submitting to Supabase:', submitError);
-      setError('Es gab ein Problem beim Senden Ihrer Anfrage. Bitte versuchen Sie es spaeter erneut.');
+      setError('Es gab ein Problem beim Senden Ihrer Anfrage. Bitte versuchen Sie es später erneut.');
     } finally {
       setIsSubmitting(false);
     }
@@ -130,7 +130,7 @@ export default function RequestForm() {
           Unverbindlich anfragen
         </h2>
         <p className="mx-auto max-w-2xl text-lg font-light text-[var(--color-text-muted)]">
-          Geben Sie Ihre Objektdaten ein und laden Sie die Dokumente hoch. Wir pruefen Ihr Potenzial professionell und diskret.
+          Geben Sie Ihre Objektdaten ein und laden Sie die Dokumente hoch. Wir prüfen Ihr Potenzial professionell und diskret.
         </p>
       </motion.div>
 
@@ -243,7 +243,7 @@ export default function RequestForm() {
                         </>
                       ) : (
                         <>
-                          Kostenlos pruefen lassen
+                          Kostenlos prüfen lassen
                           <ArrowRight size={18} />
                         </>
                       )}
@@ -251,7 +251,7 @@ export default function RequestForm() {
                   </div>
 
                   <p className="mt-2 text-center text-xs font-light text-[var(--color-text-muted)]">
-                    Vertrauliche Behandlung und verschluesselte Uebertragung garantiert.
+                    Vertrauliche Behandlung und verschlüsselte Übertragung garantiert.
                   </p>
                 </form>
               </motion.div>
@@ -269,7 +269,7 @@ export default function RequestForm() {
                   Anfrage erfolgreich gesendet!
                 </h3>
                 <p className="mb-8 max-w-sm font-light text-[var(--color-text-muted)]">
-                  Vielen Dank fuer Ihre Anfrage. Wir werden uns in Kuerze bei Ihnen melden, um die naechsten Schritte zu besprechen.
+                  Vielen Dank für Ihre Anfrage. Wir werden uns in Kürze bei Ihnen melden, um die naechsten Schritte zu besprechen.
                 </p>
                 <button onClick={() => setIsSubmitted(false)} className="text-sm font-medium text-[var(--color-ink)] hover:underline">
                   Weitere Anfrage stellen
@@ -291,10 +291,10 @@ export default function RequestForm() {
             Unser Versprechen
           </div>
           <h3 className="mb-2 font-heading text-xl font-medium tracking-tight text-[var(--color-ink)]">
-            Transparenz & Qualitaet
+            Transparenz & Qualität
           </h3>
           <p className="mb-8 text-sm font-light text-[var(--color-text-muted)]">
-            Wir stehen fuer einen reibungslosen Prozess und hoechste Gutachtenqualitaet.
+            Wir stehen für einen reibungslosen Prozess und höchste Gutachtenqualitaet.
           </p>
 
           <ul className="mb-10 flex-1 space-y-4">
@@ -310,11 +310,11 @@ export default function RequestForm() {
             </li>
             <li className="flex items-start gap-3 text-sm font-light text-[var(--color-text-muted)]">
               <CheckCircle className="mt-0.5 text-[var(--color-accent)]" size={18} />
-              <span>Diskretion und hoechste Datensicherheit</span>
+              <span>Diskretion und höchste Datensicherheit</span>
             </li>
             <li className="flex items-start gap-3 text-sm font-light text-[var(--color-text-muted)]">
               <CheckCircle className="mt-0.5 text-[var(--color-accent)]" size={18} />
-              <span>Gueltig fuer das deutsche Finanzamt</span>
+              <span>Gültig für das deutsche Finanzamt</span>
             </li>
           </ul>
 
@@ -331,3 +331,5 @@ export default function RequestForm() {
     </section>
   );
 }
+
+

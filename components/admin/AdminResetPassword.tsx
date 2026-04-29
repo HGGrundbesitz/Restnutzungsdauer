@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {useEffect, useState} from 'react';
 import Link from 'next/link';
@@ -101,7 +101,7 @@ export default function AdminResetPassword() {
     <AdminAuthShell
       cardEyebrow="Passwort Reset"
       cardTitle="Neues Passwort setzen"
-      cardDescription="Vergeben Sie ein neues Passwort fuer Ihren Adminzugang. Nach dem Speichern geht es direkt zurueck in den Adminbereich."
+      cardDescription="Vergeben Sie ein neues Passwort für Ihren Adminzugang. Nach dem Speichern geht es direkt zurück in den Adminbereich."
     >
       {checking ? (
         <div className="admin-card-muted flex items-center justify-center gap-3 rounded-[1rem] px-4 py-4 text-sm text-[var(--color-text-muted)]">
@@ -111,7 +111,7 @@ export default function AdminResetPassword() {
       ) : !hasRecoverySession ? (
         <div className="space-y-5">
           <div className="rounded-[1rem] border border-amber-200/70 bg-amber-50/80 p-4 text-sm leading-7 text-amber-700">
-            {error || 'Der Reset-Link ist nicht mehr gueltig. Fordern Sie bitte einen neuen Passwort-Link ueber den Admin-Login an.'}
+            {error || 'Der Reset-Link ist nicht mehr gültig. Fordern Sie bitte einen neuen Passwort-Link über den Admin-Login an.'}
           </div>
 
           <Link
@@ -119,7 +119,7 @@ export default function AdminResetPassword() {
             className="admin-ghost-btn inline-flex w-full items-center justify-center gap-2 rounded-[1rem] px-4 py-3.5 text-sm font-semibold"
           >
             <ArrowLeft size={18} />
-            Zurueck zum Admin Login
+            Zurück zum Admin Login
           </Link>
         </div>
       ) : (
@@ -149,7 +149,7 @@ export default function AdminResetPassword() {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-[var(--color-ink)]">Passwort bestaetigen</label>
+            <label className="mb-2 block text-sm font-medium text-[var(--color-ink)]">Passwort bestätigen</label>
             <div className="relative">
               <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" size={16} />
               <input
@@ -173,7 +173,7 @@ export default function AdminResetPassword() {
           </div>
 
           <div className="rounded-[1rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-sm leading-7 text-[var(--color-text-muted)]">
-            Verwenden Sie am besten ein neues Passwort mit mindestens 10 Zeichen, das nur fuer den Adminzugang genutzt wird.
+            Verwenden Sie am besten ein neues Passwort mit mindestens 10 Zeichen, das nur für den Adminzugang genutzt wird.
           </div>
 
           {error && <div className="rounded-[1rem] border border-red-200/70 bg-red-50/80 p-4 text-sm text-red-600">{error}</div>}
@@ -203,3 +203,5 @@ export default function AdminResetPassword() {
     </AdminAuthShell>
   );
 }
+
+

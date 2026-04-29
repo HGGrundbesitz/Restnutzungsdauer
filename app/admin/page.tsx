@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {useEffect, useState} from 'react';
 import type {Session} from '@supabase/supabase-js';
@@ -10,20 +10,64 @@ import {supabase} from '@/lib/supabase';
 export default function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessionError, setSessionError] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({data: {session}}) => {
-      setSession(session);
-      setLoading(false);
-    });
+    let isMounted = true;
+
+    const loadSession = async () => {
+      try {
+        const {
+          data: {session},
+          error,
+        } = await supabase.auth.getSession();
+
+        if (error) {
+          throw error;
+        }
+
+        if (!isMounted) {
+          return;
+        }
+
+        setSession(session);
+        setSessionError(null);
+      } catch (error) {
+        console.error('Failed to initialize admin session:', error);
+
+        if (!isMounted) {
+          return;
+        }
+
+        setSession(null);
+        setSessionError(
+          'Supabase konnte nicht erreicht werden. Bitte prüfen Sie die NEXT_PUBLIC_SUPABASE_URL in Ihrer .env.local und starten Sie den Dev-Server neu.'
+        );
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadSession();
 
     const {
       data: {subscription},
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (!isMounted) {
+        return;
+      }
+
       setSession(nextSession);
+      setSessionError(null);
+      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   if (loading) {
@@ -38,7 +82,7 @@ export default function AdminPage() {
   }
 
   if (!session) {
-    return <AdminLogin />;
+    return <AdminLogin externalError={sessionError} />;
   }
 
   return <AdminDashboard session={session} />;

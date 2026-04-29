@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {AnimatePresence, motion} from 'motion/react';
 import {AlertTriangle, Loader2, X} from 'lucide-react';
@@ -18,7 +18,7 @@ export default function DeleteConfirmationModal({
   onClose,
   onConfirm,
   title = 'Anfrage loeschen',
-  message = 'Moechten Sie diese Anfrage wirklich loeschen? Diese Aktion kann nicht rueckgaengig gemacht werden und alle zugehoerigen Daten werden dauerhaft entfernt.',
+  message = 'Moechten Sie diese Anfrage wirklich loeschen? Diese Aktion kann nicht rueckgaengig gemacht werden und alle zugehörigen Daten werden dauerhaft entfernt.',
 }: DeleteConfirmationModalProps) {
   return (
     <AnimatePresence>
@@ -70,7 +70,7 @@ export default function DeleteConfirmationModal({
                   {isDeleting ? (
                     <>
                       <Loader2 size={16} className="animate-spin" />
-                      Wird geloescht...
+                      Wird gelöscht...
                     </>
                   ) : (
                     'Endgueltig loeschen'
@@ -84,3 +84,4 @@ export default function DeleteConfirmationModal({
     </AnimatePresence>
   );
 }
+

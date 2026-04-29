@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {motion} from 'motion/react';
 import {Award, CheckCircle, Users, BookOpen} from 'lucide-react';
@@ -17,7 +17,7 @@ export default function AboutUs() {
           >
             <div className="section-eyebrow mb-6 w-fit">
               <Users size={12} className="text-[var(--color-accent)]" />
-              Ueber uns
+              Über uns
             </div>
 
             <h2 className="font-heading text-4xl leading-[1.08] tracking-tight text-[var(--color-ink)] md:text-5xl">
@@ -25,8 +25,8 @@ export default function AboutUs() {
             </h2>
 
             <p className="mb-8 mt-6 text-lg leading-relaxed text-[var(--color-text-muted)]">
-              Wir verbinden bautechnische Bewertung, steuerliches Verstaendnis und ein klares digitales Erlebnis.
-              So entsteht ein Ergebnis, das nicht nur formal passt, sondern fuer Eigentuemer auch angenehm durch den Prozess fuehrt.
+              Wir verbinden bautechnische Bewertung, steuerliches Verständnis und ein klares digitales Erlebnis.
+              So entsteht ein Ergebnis, das nicht nur formal passt, sondern für Eigentümer auch angenehm durch den Prozess führt.
             </p>
 
             <div className="mb-10 grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -36,7 +36,7 @@ export default function AboutUs() {
                 </div>
                 <div>
                   <h4 className="mb-1 font-heading font-medium text-[var(--color-ink)]">Zertifiziert</h4>
-                  <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">Anerkannte Sachverstaendige fuer Immobilienbewertung.</p>
+                  <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">Anerkannte Sachverständige für Immobilienbewertung.</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
@@ -45,7 +45,7 @@ export default function AboutUs() {
                 </div>
                 <div>
                   <h4 className="mb-1 font-heading font-medium text-[var(--color-ink)]">Erfahren</h4>
-                  <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">Ueber 15 Jahre Erfahrung in der Immobilienwirtschaft.</p>
+                  <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">Über 15 Jahre Erfahrung in der Immobilienwirtschaft.</p>
                 </div>
               </div>
             </div>
@@ -82,3 +82,4 @@ export default function AboutUs() {
     </section>
   );
 }
+

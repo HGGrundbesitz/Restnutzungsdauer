@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {useEffect, useState} from 'react';
 import {AnimatePresence, motion} from 'motion/react';
@@ -135,7 +135,7 @@ export default function Header() {
 
               <button
                 type="button"
-                aria-label={isMobileMenuOpen ? 'Menue schliessen' : 'Menue oeffnen'}
+                aria-label={isMobileMenuOpen ? 'Menue schliessen' : 'Menue öffnen'}
                 onClick={() => setIsMobileMenuOpen((open) => !open)}
                 className="theme-panel flex h-10 w-10 items-center justify-center rounded-[0.95rem] text-[var(--color-ink)] transition-colors hover:bg-[var(--color-surface-strong)] lg:hidden"
               >
@@ -209,3 +209,4 @@ export default function Header() {
     </header>
   );
 }
+

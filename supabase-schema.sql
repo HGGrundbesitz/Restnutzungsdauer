@@ -1,4 +1,4 @@
-create extension if not exists pgcrypto;
+﻿create extension if not exists pgcrypto;
 
 create table if not exists public.property_requests (
   id uuid default gen_random_uuid() primary key,
@@ -8,8 +8,15 @@ create table if not exists public.property_requests (
   address text not null,
   year integer,
   status text default 'pending',
-  documents text[] default '{}'::text[]
+  documents text[] default '{}'::text[],
+  phone text,
+  source text not null default 'request_form',
+  quick_check_answers jsonb
 );
+
+alter table public.property_requests add column if not exists phone text;
+alter table public.property_requests add column if not exists source text not null default 'request_form';
+alter table public.property_requests add column if not exists quick_check_answers jsonb;
 
 create table if not exists public.admin_users (
   user_id uuid primary key references auth.users(id) on delete cascade,
@@ -124,3 +131,4 @@ create policy "Allow authenticated document deletes" on storage.objects
 -- from auth.users
 -- where email in ('alice@example.com', 'bob@example.com')
 -- on conflict (user_id) do update set email = excluded.email;
+

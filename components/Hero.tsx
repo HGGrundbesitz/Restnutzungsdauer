@@ -1,4 +1,4 @@
-import {
+﻿import {
   ArrowRight,
   BarChart3,
   CheckCircle2,
@@ -18,8 +18,8 @@ const metrics = [
 
 const trustNotes = [
   'Finanzamtsnahe Argumentation',
-  'Verschluesselter Upload',
-  'Persoenliche Rueckmeldung statt Ticketsystem',
+  'Verschlüsselter Upload',
+  'Persönliche Rückmeldung statt Ticketsystem',
 ];
 
 const checklist = [
@@ -68,7 +68,7 @@ export default function Hero() {
           <div className="relative flex w-full flex-col items-start">
             <div className="section-eyebrow mb-7">
               <span className="h-2 w-2 rounded-full bg-[var(--color-accent)] shadow-[0_0_0_6px_var(--color-accent-soft)]" />
-              Digitale Premium-Pruefung fuer Immobilien
+              Digitale Premium-Prüfung für Immobilien
             </div>
 
             <h1 className="display-title max-w-[10.9ch] !text-[clamp(2.7rem,5.8vw,4.95rem)]">
@@ -81,11 +81,11 @@ export default function Hero() {
 
             <p className="mt-5 max-w-[39rem] text-[clamp(0.98rem,1.2vw,1.08rem)] font-medium leading-[1.78] text-[var(--color-text-muted)]">
               Wir gestalten Restnutzungsdauer-Gutachten wie einen klaren digitalen Mandatsprozess:
-              diskret, schnell, nachvollziehbar und so gestaltet, dass Eigentuemer nicht noch einen zweiten Vollzeitjob daraus machen muessen.
+              diskret, schnell, nachvollziehbar und so gestaltet, dass Eigentümer nicht noch einen zweiten Vollzeitjob daraus machen muessen.
             </p>
 
             <div className="mt-8 flex w-full flex-col gap-4 sm:w-auto sm:flex-row sm:items-center">
-              <a href="#anfrage" className="cta-btn w-full text-center text-sm font-semibold tracking-[0.08em] sm:w-auto">
+              <a href="#schnellcheck" className="cta-btn w-full text-center text-sm font-semibold tracking-[0.08em] sm:w-auto">
                 Jetzt Gutachten anfragen
               </a>
               <a
@@ -168,7 +168,7 @@ export default function Hero() {
                   </div>
                   <div className="mt-4 text-[3.35rem] font-extrabold tracking-tight">3,8%</div>
                   <p className="mt-3 max-w-[15rem] text-[0.96rem] leading-6 text-[var(--color-contrast-ink)]/72">
-                    plausibel hergeleitet und vorbereitet fuer eine saubere steuerliche Einordnung.
+                    plausibel hergeleitet und vorbereitet für eine saubere steuerliche Einordnung.
                   </p>
                   <div className="mt-6 flex items-center gap-3 rounded-[1.2rem] bg-[var(--color-contrast-ink)]/10 px-3 py-3">
                     <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-contrast-ink)]/12">
@@ -233,3 +233,5 @@ export default function Hero() {
     </section>
   );
 }
+
+
