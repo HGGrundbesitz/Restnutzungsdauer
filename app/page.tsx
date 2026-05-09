@@ -9,7 +9,6 @@ import AboutUs from '@/components/AboutUs';
 import QuickCheck from '@/components/QuickCheck';
 import RequestForm from '@/components/RequestForm';
 import FAQ from '@/components/FAQ';
-import CTA from '@/components/CTA';
 import Footer from '@/components/Footer';
 import {motion, useScroll, useSpring} from 'motion/react';
 
@@ -39,7 +38,6 @@ export default function Home() {
         <AboutUs />
         <RequestForm />
         <FAQ />
-        <CTA />
         <Footer />
       </div>
     </main>

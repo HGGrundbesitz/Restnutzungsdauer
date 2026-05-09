@@ -2,7 +2,7 @@
 
 import {useEffect, useState} from 'react';
 import {AnimatePresence, motion} from 'motion/react';
-import {ArrowUpRight, Menu, Moon, SunMedium, X} from 'lucide-react';
+import {ArrowUpRight, Menu, X} from 'lucide-react';
 import {cn} from '@/lib/utils';
 
 const navItems = [
@@ -12,30 +12,9 @@ const navItems = [
   {href: '#anfrage', label: 'Kontakt'},
 ];
 
-type ThemeMode = 'light' | 'dark';
-
-const getInitialTheme = (): ThemeMode => {
-  if (typeof document !== 'undefined') {
-    const themeAttr = document.documentElement.dataset.theme;
-    if (themeAttr === 'light' || themeAttr === 'dark') {
-      return themeAttr;
-    }
-  }
-
-  if (typeof window !== 'undefined') {
-    const storedTheme = window.localStorage.getItem('site-theme');
-    if (storedTheme === 'light' || storedTheme === 'dark') {
-      return storedTheme;
-    }
-  }
-
-  return 'light';
-};
-
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [theme, setTheme] = useState<ThemeMode>(getInitialTheme);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -53,16 +32,6 @@ export default function Header() {
       document.body.style.overflow = '';
     };
   }, [isMobileMenuOpen]);
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    document.documentElement.style.colorScheme = theme;
-    window.localStorage.setItem('site-theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme((current) => (current === 'light' ? 'dark' : 'light'));
-  };
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
@@ -113,18 +82,6 @@ export default function Header() {
             </nav>
 
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                aria-label={theme === 'light' ? 'Dunkelmodus aktivieren' : 'Hellmodus aktivieren'}
-                onClick={toggleTheme}
-                className="theme-panel inline-flex h-10 items-center justify-center gap-2 rounded-full px-3 text-[var(--color-ink)] transition-all duration-300 hover:bg-[var(--color-surface-strong)] sm:px-3.5"
-              >
-                {theme === 'light' ? <Moon size={15} /> : <SunMedium size={15} />}
-                <span className="hidden text-[10px] font-extrabold uppercase tracking-[0.18em] md:inline">
-                  {theme === 'light' ? 'Dark' : 'Light'}
-                </span>
-              </button>
-
               <a
                 href="#anfrage"
                 className="hidden items-center gap-1.5 rounded-full bg-[var(--color-contrast-surface)] px-4 py-2.5 text-[10px] font-extrabold uppercase tracking-[0.2em] text-[var(--color-contrast-ink)] shadow-[0_18px_34px_-22px_rgba(0,0,0,0.34)] transition-all duration-300 hover:-translate-y-0.5 sm:inline-flex"
@@ -135,7 +92,7 @@ export default function Header() {
 
               <button
                 type="button"
-                aria-label={isMobileMenuOpen ? 'Menue schliessen' : 'Menue öffnen'}
+                aria-label={isMobileMenuOpen ? 'Menü schließen' : 'Menü öffnen'}
                 onClick={() => setIsMobileMenuOpen((open) => !open)}
                 className="theme-panel flex h-10 w-10 items-center justify-center rounded-[0.95rem] text-[var(--color-ink)] transition-colors hover:bg-[var(--color-surface-strong)] lg:hidden"
               >
@@ -150,7 +107,7 @@ export default function Header() {
             <>
               <motion.button
                 type="button"
-                aria-label="Menue schliessen"
+                aria-label="Menü schließen"
                 initial={{opacity: 0}}
                 animate={{opacity: 1}}
                 exit={{opacity: 0}}
@@ -166,17 +123,8 @@ export default function Header() {
                 transition={{duration: 0.22, ease: [0.16, 1, 0.3, 1]}}
                 className="theme-panel-strong relative z-20 mt-2 rounded-[1.45rem] border p-3 shadow-[var(--shadow-lift)] lg:hidden"
               >
-                <div className="mb-2 flex items-center justify-between px-1 py-1">
-                  <span className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-[var(--color-text-muted)]">
-                    Navigation
-                  </span>
-                  <button
-                    type="button"
-                    onClick={toggleTheme}
-                    className="theme-panel flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-ink)]"
-                  >
-                    {theme === 'light' ? <Moon size={15} /> : <SunMedium size={15} />}
-                  </button>
+                <div className="mb-2 px-1 py-1 text-[10px] font-extrabold uppercase tracking-[0.22em] text-[var(--color-text-muted)]">
+                  Navigation
                 </div>
 
                 <div className="space-y-1.5">
@@ -209,4 +157,3 @@ export default function Header() {
     </header>
   );
 }
-

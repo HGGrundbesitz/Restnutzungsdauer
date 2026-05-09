@@ -70,7 +70,8 @@ type ContactData = {
 type CardOption = {
   value: string;
   label: string;
-  icon?: ComponentType<{size?: number; className?: string}>;
+  shortLabel?: string;
+  icon?: ComponentType<{size?: number; className?: string; strokeWidth?: number}>;
 };
 
 type Step =
@@ -88,7 +89,7 @@ type Step =
       kind: 'choice';
       title: string;
       subtitle?: string;
-      icon?: ComponentType<{size?: number; className?: string}>;
+      icon?: ComponentType<{size?: number; className?: string; strokeWidth?: number}>;
       layout: 'cards' | 'pills';
       options: CardOption[];
     }
@@ -109,7 +110,7 @@ type Step =
       max: number;
       step: number;
       unit?: string;
-      icon: ComponentType<{size?: number; className?: string}>;
+      icon: ComponentType<{size?: number; className?: string; strokeWidth?: number}>;
       cta: string;
     }
   | {
@@ -151,11 +152,11 @@ const steps: Step[] = [
     title: 'Um welche Immobilienart handelt es sich?',
     layout: 'cards',
     options: [
-      {value: 'wohnung', label: 'Eigentumswohnung', icon: Building2},
-      {value: 'einfamilienhaus', label: 'Einfamilienhaus', icon: House},
-      {value: 'mehrfamilienhaus', label: 'Mehrfamilienhaus', icon: Building},
-      {value: 'wohnGeschaeftshaus', label: 'Wohn- und Geschäftshaus', icon: Store},
-      {value: 'gewerbe', label: 'Gewerbeobjekt', icon: Briefcase},
+      {value: 'wohnung', label: 'Eigentumswohnung', shortLabel: 'Eigentumswohnung', icon: Building2},
+      {value: 'einfamilienhaus', label: 'Einfamilienhaus', shortLabel: 'Einfamilienhaus', icon: House},
+      {value: 'mehrfamilienhaus', label: 'Mehrfamilienhaus', shortLabel: 'Mehrfamilienhaus', icon: Building},
+      {value: 'wohnGeschaeftshaus', label: 'Wohn- und Geschäftshaus', shortLabel: 'Wohn- & Geschäftshaus', icon: Store},
+      {value: 'gewerbe', label: 'Gewerbeobjekt', shortLabel: 'Gewerbeobjekt', icon: Briefcase},
     ],
   },
   {
@@ -535,7 +536,7 @@ export default function QuickCheck() {
         </p>
       </motion.div>
 
-      <div className="glass-panel overflow-hidden rounded-[2rem] p-4 shadow-[var(--shadow-lift)] sm:p-5 md:rounded-[2.2rem] md:p-8">
+      <div className="glass-panel overflow-hidden rounded-[1.5rem] p-4 shadow-[var(--shadow-lift)] sm:p-6 md:rounded-[1.75rem] md:p-8 lg:p-10">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <button
             type="button"
@@ -570,10 +571,10 @@ export default function QuickCheck() {
               animate={{opacity: 1, y: 0}}
               exit={{opacity: 0, y: -18}}
               transition={{duration: 0.28, ease: [0.16, 1, 0.3, 1]}}
-              className="mx-auto max-w-4xl"
+              className="mx-auto max-w-6xl"
             >
-              <div className="mb-10 text-center">
-                <h3 className="mx-auto max-w-4xl font-heading text-[clamp(1.75rem,8vw,3.2rem)] font-semibold leading-[1.08] tracking-tight text-[var(--color-ink)]">
+              <div className="mb-8 text-center sm:mb-10">
+                <h3 className="mx-auto max-w-4xl text-balance font-heading text-3xl font-semibold leading-[1.08] text-[var(--color-ink)] sm:text-4xl lg:text-[3.25rem]">
                   {currentStep.title}
                 </h3>
                 {'subtitle' in currentStep && currentStep.subtitle ? (
@@ -584,7 +585,7 @@ export default function QuickCheck() {
               </div>
 
               {currentStep.kind === 'choice' && currentStep.layout === 'cards' ? (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                <div className="mx-auto grid max-w-[1180px] grid-cols-[repeat(auto-fit,minmax(210px,1fr))] gap-4 sm:gap-5">
                   {currentStep.options.map((option) => {
                     const Icon = option.icon;
                     const isActive = answers[currentStep.id] === option.value;
@@ -595,16 +596,19 @@ export default function QuickCheck() {
                         type="button"
                         whileTap={{scale: 0.98}}
                         onClick={() => handleChoice(currentStep.id, option.value)}
-                        className={`group flex min-h-[184px] flex-col rounded-[1.7rem] border p-5 text-center transition-all duration-300 sm:text-left ${
+                        className={`group relative flex min-h-[176px] min-w-0 flex-col items-center justify-center overflow-hidden rounded-[1.35rem] border px-5 py-6 text-center transition-all duration-300 ${
                           isActive
-                            ? 'border-[var(--color-accent)] bg-[linear-gradient(180deg,#ffffff_0%,rgba(37,99,235,0.08)_100%)] shadow-[0_26px_52px_-34px_rgba(37,99,235,0.35)]'
-                            : 'border-[var(--color-border)] bg-[rgba(255,255,255,0.9)] hover:-translate-y-1 hover:border-[var(--color-border-strong)] hover:shadow-[0_22px_48px_-36px_rgba(15,23,42,0.22)]'
+                            ? 'border-[var(--color-accent)] bg-[linear-gradient(180deg,#ffffff_0%,rgba(37,99,235,0.10)_100%)] shadow-[0_26px_55px_-36px_rgba(37,99,235,0.42)] ring-1 ring-[rgba(37,99,235,0.14)]'
+                            : 'border-[var(--color-border)] bg-[rgba(255,255,255,0.9)] hover:-translate-y-1.5 hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-strong)] hover:shadow-[0_24px_55px_-38px_rgba(15,23,42,0.26)]'
                         }`}
                       >
-                        <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-[1.2rem] bg-[var(--color-accent-soft)] text-[var(--color-accent)]">
-                          {Icon ? <Icon size={28} /> : null}
+                        <span className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-[rgba(37,99,235,0.26)] to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                        <div className="mb-5 flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.15rem] bg-[var(--color-accent-soft)] text-[var(--color-accent)] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-105">
+                          {Icon ? <Icon size={30} strokeWidth={1.8} /> : null}
                         </div>
-                        <div className="text-lg font-semibold leading-7 text-[var(--color-ink)]">{option.label}</div>
+                        <div className="flex min-h-[3rem] max-w-full items-center justify-center text-balance break-words text-[0.98rem] font-semibold leading-6 text-[var(--color-ink)] [overflow-wrap:anywhere] sm:text-[1.03rem]">
+                          {option.shortLabel ?? option.label}
+                        </div>
                       </motion.button>
                     );
                   })}
@@ -618,7 +622,7 @@ export default function QuickCheck() {
                       <currentStep.icon size={40} />
                     </div>
                   ) : null}
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="mx-auto grid max-w-3xl grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {currentStep.options.map((option) => {
                       const isActive = answers[currentStep.id] === option.value;
 
@@ -628,7 +632,7 @@ export default function QuickCheck() {
                           type="button"
                           whileTap={{scale: 0.98}}
                           onClick={() => handleChoice(currentStep.id, option.value)}
-                          className={`rounded-[1.4rem] border px-5 py-4 text-center text-base font-semibold leading-6 transition-all duration-300 sm:rounded-full ${
+                          className={`min-h-[58px] rounded-[1rem] border px-5 py-4 text-center text-base font-semibold leading-6 transition-all duration-300 sm:rounded-full ${
                             isActive
                               ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-ink)] shadow-[0_22px_44px_-34px_rgba(37,99,235,0.32)]'
                               : 'border-[var(--color-border)] bg-[rgba(255,255,255,0.86)] text-[var(--color-text-muted)] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-strong)] hover:text-[var(--color-ink)]'
@@ -718,7 +722,7 @@ export default function QuickCheck() {
               ) : null}
 
               {currentStep.kind === 'contact' ? (
-                <form onSubmit={handleSubmit} className="mx-auto max-w-4xl">
+                <form onSubmit={handleSubmit} className="mx-auto max-w-6xl">
                   <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-[1.8rem] bg-[var(--color-accent-soft)] text-[var(--color-accent)]">
                     <UserRound size={40} />
                   </div>
@@ -876,6 +880,9 @@ type AnswersKeyChoice =
   | 'floorplanAge';
 
 type AnswersKeyNumber = 'yearBuilt' | 'area' | 'units';
+
+
+
 
 
 

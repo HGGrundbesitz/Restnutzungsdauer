@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {useEffect, useRef} from 'react';
 import * as THREE from 'three';
@@ -21,14 +21,12 @@ export default function WebGLBackground() {
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     const geometry = new THREE.PlaneGeometry(2, 2);
 
-    const readTheme = () => (document.documentElement.dataset.theme === 'dark' ? 1 : 0);
-
     const uniforms = {
       uTime: {value: 0},
       uResolution: {value: new THREE.Vector2(window.innerWidth, window.innerHeight)},
       uMouse: {value: new THREE.Vector2(-10, -10)},
       uScroll: {value: 0},
-      uTheme: {value: readTheme()},
+      uTheme: {value: 0},
     };
 
     const material = new THREE.ShaderMaterial({
@@ -173,15 +171,6 @@ export default function WebGLBackground() {
       uniforms.uScroll.value = maxScroll > 0 ? scrollY / maxScroll : 0;
     };
 
-    const observer = new MutationObserver(() => {
-      uniforms.uTheme.value = readTheme();
-    });
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['data-theme'],
-    });
-
     window.addEventListener('resize', handleResize);
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('scroll', handleScroll);
@@ -195,7 +184,6 @@ export default function WebGLBackground() {
     animationFrameId = requestAnimationFrame(animate);
 
     return () => {
-      observer.disconnect();
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('scroll', handleScroll);
@@ -214,3 +202,4 @@ export default function WebGLBackground() {
     />
   );
 }
+
