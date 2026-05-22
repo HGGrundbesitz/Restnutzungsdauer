@@ -2,7 +2,6 @@
 
 import Header from '@/components/Header';
 import Hero from '@/components/Hero';
-import TrustedBy from '@/components/TrustedBy';
 import ValueProposition from '@/components/ValueProposition';
 import HowItWorks from '@/components/HowItWorks';
 import AboutUs from '@/components/AboutUs';
@@ -32,7 +31,6 @@ export default function Home() {
 
       <div className="relative z-10 w-full">
         <QuickCheck />
-        <TrustedBy />
         <ValueProposition />
         <HowItWorks />
         <AboutUs />

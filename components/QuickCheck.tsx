@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import {type ComponentType, FormEvent, useMemo, useState} from 'react';
 import {AnimatePresence, motion} from 'motion/react';
@@ -9,9 +9,7 @@ import {
   Briefcase,
   Building,
   Building2,
-  Check,
   CheckCircle2,
-  Clock3,
   DoorOpen,
   Flame,
   Hammer,
@@ -21,7 +19,6 @@ import {
   Minus,
   Plus,
   Ruler,
-  ShieldCheck,
   Sparkles,
   Store,
   UserRound,
@@ -477,7 +474,7 @@ export default function QuickCheck() {
 
   if (isSubmitted) {
     return (
-      <section id="schnellcheck" className="relative z-10 mx-auto max-w-[1200px] px-4 py-20 sm:px-6 md:py-32">
+      <section id="ersteinschaetzung" className="relative z-10 mx-auto max-w-[1200px] px-4 py-20 sm:px-6 md:py-32">
         <div className="glass-panel overflow-hidden rounded-[2rem] p-8 text-center md:p-12">
           <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[var(--color-accent-soft)] text-[var(--color-accent)]">
             <BadgeCheck size={36} />
@@ -487,11 +484,11 @@ export default function QuickCheck() {
           </h2>
           <p className="mx-auto max-w-2xl text-lg font-light leading-8 text-[var(--color-text-muted)]">
             Wir haben Ihren Schnellcheck erhalten und schicken die Zusammenfassung an Ihre E-Mail-Adresse.
-            Wenn Sie möchten, können Sie darunter direkt noch Unterlagen hochladen.
+            Wenn Sie möchten, können Sie darunter direkt noch Zur Anfrage.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <a href="#anfrage" className="cta-btn text-sm font-semibold tracking-[0.08em]">
-              Unterlagen hochladen
+              Zur Anfrage
             </a>
             <button
               type="button"
@@ -513,7 +510,7 @@ export default function QuickCheck() {
   }
 
   return (
-    <section id="schnellcheck" className="relative z-10 mx-auto max-w-[1240px] px-4 py-20 sm:px-6 md:py-32">
+    <section id="ersteinschaetzung" className="relative z-10 mx-auto max-w-[1240px] px-4 py-20 sm:px-6 md:py-32">
       <div className="pointer-events-none absolute inset-x-[8%] top-10 -z-10 h-[420px] rounded-full bg-[var(--color-accent-soft)] blur-[120px] opacity-70" />
 
       <motion.div
@@ -528,11 +525,10 @@ export default function QuickCheck() {
           Digitale Ersteinschätzung
         </div>
         <h2 className="mb-4 font-heading text-4xl font-semibold tracking-tight text-[var(--color-ink)] md:text-5xl">
-          Restnutzungsdauer schnell vorsortieren
+          In 2 Minuten prüfen, ob sich ein Gutachten lohnt
         </h2>
         <p className="mx-auto max-w-3xl text-lg font-light leading-8 text-[var(--color-text-muted)]">
-          Gleiche Kernfragen wie in klassischen Schnellchecks, aber in einer ruhigeren, hochwertigeren
-          Oberfläche, passend zum Design dieser Seite.
+          Jetzt schnell herausfinden, ob sich ein Gutachten für Sie rechnet.
         </p>
       </motion.div>
 
@@ -585,7 +581,7 @@ export default function QuickCheck() {
               </div>
 
               {currentStep.kind === 'choice' && currentStep.layout === 'cards' ? (
-                <div className="mx-auto grid max-w-[1180px] grid-cols-[repeat(auto-fit,minmax(210px,1fr))] gap-4 sm:gap-5">
+                <div className="mx-auto grid max-w-[1180px] grid-cols-1 gap-4 min-[430px]:grid-cols-2 sm:gap-5 md:grid-cols-3 xl:grid-cols-5">
                   {currentStep.options.map((option) => {
                     const Icon = option.icon;
                     const isActive = answers[currentStep.id] === option.value;
@@ -596,7 +592,7 @@ export default function QuickCheck() {
                         type="button"
                         whileTap={{scale: 0.98}}
                         onClick={() => handleChoice(currentStep.id, option.value)}
-                        className={`group relative flex min-h-[176px] min-w-0 flex-col items-center justify-center overflow-hidden rounded-[1.35rem] border px-5 py-6 text-center transition-all duration-300 ${
+                        className={`group relative flex min-h-[168px] min-w-0 flex-col items-center justify-center overflow-hidden rounded-[1.35rem] border px-5 py-6 text-center transition-all duration-300 ${
                           isActive
                             ? 'border-[var(--color-accent)] bg-[linear-gradient(180deg,#ffffff_0%,rgba(37,99,235,0.10)_100%)] shadow-[0_26px_55px_-36px_rgba(37,99,235,0.42)] ring-1 ring-[rgba(37,99,235,0.14)]'
                             : 'border-[var(--color-border)] bg-[rgba(255,255,255,0.9)] hover:-translate-y-1.5 hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-strong)] hover:shadow-[0_24px_55px_-38px_rgba(15,23,42,0.26)]'
@@ -820,48 +816,13 @@ export default function QuickCheck() {
                       {isSubmitting ? 'Wird gesendet...' : currentStep.cta}
                     </button>
                     <p className="text-sm font-light text-[var(--color-text-muted)]">
-                      Wir speichern die Basisanfrage im bestehenden Ablauf und schicken die komplette Schnellcheck-Zusammenfassung per E-Mail.
+                      Wir senden Ihre Angaben sicher ab und melden uns mit der passenden nächsten Einordnung.
                     </p>
                   </div>
                 </form>
               ) : null}
             </motion.div>
           </AnimatePresence>
-        </div>
-
-        <div className="mt-10 grid gap-4 border-t border-[var(--color-border)] pt-8 md:grid-cols-2 xl:grid-cols-3">
-          {trustNotes.map((note) => (
-            <div key={note} className="theme-panel flex items-center gap-3 rounded-[1.2rem] px-4 py-4 text-sm font-medium text-[var(--color-text-muted)]">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-accent-soft)] text-[var(--color-accent)]">
-                <Check size={16} />
-              </span>
-              {note}
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <div className="theme-panel rounded-[1.4rem] px-5 py-4 text-sm font-medium text-[var(--color-text-muted)]">
-            <div className="mb-1 flex items-center gap-2 text-[var(--color-ink)]">
-              <ShieldCheck size={16} className="text-[var(--color-accent)]" />
-              Diskreter Prozess
-            </div>
-            Nur die wichtigsten Objektfragen, klar und ohne Medienbruch.
-          </div>
-          <div className="theme-panel rounded-[1.4rem] px-5 py-4 text-sm font-medium text-[var(--color-text-muted)]">
-            <div className="mb-1 flex items-center gap-2 text-[var(--color-ink)]">
-              <Clock3 size={16} className="text-[var(--color-accent)]" />
-              Schnelle Rückmeldung
-            </div>
-            Die Angaben landen direkt in Ihrem vorhandenen Anfrageprozess.
-          </div>
-          <div className="theme-panel rounded-[1.4rem] px-5 py-4 text-sm font-medium text-[var(--color-text-muted)]">
-            <div className="mb-1 flex items-center gap-2 text-[var(--color-ink)]">
-              <Sparkles size={16} className="text-[var(--color-accent)]" />
-              Passend zum Seitenstil
-            </div>
-            Gleiche Designrichtung wie Hero, Cards und Formularbereich.
-          </div>
         </div>
       </div>
     </section>

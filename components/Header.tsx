@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import {useEffect, useState} from 'react';
 import {AnimatePresence, motion} from 'motion/react';
@@ -6,10 +6,11 @@ import {ArrowUpRight, Menu, X} from 'lucide-react';
 import {cn} from '@/lib/utils';
 
 const navItems = [
+  {href: '#ersteinschaetzung', label: 'Ersteinschätzung'},
   {href: '#vorteile', label: 'Vorteile'},
-  {href: '#ablauf', label: 'Ablauf'},
+  {href: '#prozess', label: 'Prozess'},
+  {href: '#warum-wir', label: 'Warum wir'},
   {href: '#faq', label: 'FAQ'},
-  {href: '#anfrage', label: 'Kontakt'},
 ];
 
 export default function Header() {
@@ -41,19 +42,19 @@ export default function Header() {
     <header
       id="creative-header"
       className={cn(
-        'fixed inset-x-0 z-50 px-4 sm:px-6 transition-all duration-500',
-        isScrolled ? 'top-2.5' : 'top-4'
+        'fixed inset-x-0 z-50 px-4 transition-all duration-500 sm:px-6',
+        isScrolled ? 'top-2.5' : 'top-4',
       )}
     >
       <div className="mx-auto max-w-[1320px]">
         <div
           className={cn(
             'theme-panel-strong relative z-20 rounded-[1.55rem] border px-3 py-2.5 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] sm:px-4',
-            isScrolled ? 'shadow-[var(--shadow-lift)]' : 'shadow-[var(--shadow-soft)]'
+            isScrolled ? 'shadow-[var(--shadow-lift)]' : 'shadow-[var(--shadow-soft)]',
           )}
         >
           <div className="flex items-center justify-between gap-3">
-            <a href="#" className="flex min-w-0 items-center gap-2.5 rounded-[1.1rem] py-1 pr-2">
+            <a href="#hero" className="flex min-w-0 items-center gap-2.5 rounded-[1.1rem] py-1 pr-2" onClick={closeMobileMenu}>
               <div className="theme-contrast-panel flex h-9 w-9 shrink-0 items-center justify-center rounded-[0.95rem] shadow-[0_12px_26px_-18px_rgba(0,0,0,0.4)] sm:h-10 sm:w-10">
                 <span className="font-heading text-base sm:text-[1.05rem]">R</span>
               </div>
@@ -68,12 +69,12 @@ export default function Header() {
               </div>
             </a>
 
-            <nav className="hidden items-center gap-6 px-4 lg:flex xl:gap-8">
+            <nav className="hidden items-center gap-5 px-4 lg:flex xl:gap-7">
               {navItems.map((item) => (
                 <a
                   key={item.href}
                   href={item.href}
-                  className="group relative py-2 text-[11px] font-extrabold uppercase tracking-[0.22em] text-[var(--color-text-muted)] transition-colors duration-300 hover:text-[var(--color-ink)]"
+                  className="group relative py-2 text-[10px] font-extrabold uppercase tracking-[0.2em] text-[var(--color-text-muted)] transition-colors duration-300 hover:text-[var(--color-ink)] xl:text-[11px]"
                 >
                   {item.label}
                   <span className="absolute inset-x-0 -bottom-0.5 h-px origin-left scale-x-0 bg-[var(--color-accent)] transition-transform duration-300 group-hover:scale-x-100" />
@@ -133,7 +134,7 @@ export default function Header() {
                       key={item.href}
                       href={item.href}
                       onClick={closeMobileMenu}
-                      className="theme-panel flex items-center justify-between rounded-[1rem] px-4 py-3 text-[11px] font-extrabold uppercase tracking-[0.2em] text-[var(--color-ink)] transition-all hover:bg-[var(--color-surface-strong)]"
+                      className="theme-panel flex items-center justify-between rounded-[1rem] px-4 py-3 text-[11px] font-extrabold uppercase tracking-[0.16em] text-[var(--color-ink)] transition-all hover:bg-[var(--color-surface-strong)]"
                     >
                       <span>{item.label}</span>
                       <ArrowUpRight size={14} className="text-[var(--color-accent)]" />
