@@ -24,7 +24,6 @@ import {
   UserRound,
   Wrench,
 } from 'lucide-react';
-import {supabase, isSupabaseConfigured} from '@/lib/supabase';
 
 type PropertyType = 'wohnung' | 'einfamilienhaus' | 'mehrfamilienhaus' | 'wohnGeschaeftshaus' | 'gewerbe';
 type AgeBucket =
@@ -425,27 +424,6 @@ export default function QuickCheck() {
     setIsSubmitting(true);
 
     try {
-      const structuredAnswers = summary.map(([label, value]) => ({label, value}));
-
-      if (isSupabaseConfigured) {
-        const {error: insertError} = await supabase.from('property_requests').insert([
-          {
-            name: fullName,
-            email,
-            phone,
-            address: answers.address.trim() || 'Nicht angegeben',
-            year: answers.yearBuilt,
-            documents: [],
-            source: 'quick_check',
-            quick_check_answers: structuredAnswers,
-          },
-        ]);
-
-        if (insertError) {
-          throw insertError;
-        }
-      }
-
       const response = await fetch('/api/send-quick-check-email', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -455,18 +433,27 @@ export default function QuickCheck() {
           email,
           phone,
           consent: contact.consent,
+          address: answers.address.trim() || 'Nicht angegeben',
+          year: answers.yearBuilt,
           answers: summary,
         }),
       });
 
+      const result = (await response.json().catch(() => null)) as {error?: string} | null;
+
       if (!response.ok) {
-        throw new Error('mail_failed');
+        throw new Error(result?.error || 'quick_check_failed');
       }
 
       setIsSubmitted(true);
     } catch (submissionError) {
       console.error('Quick check submission failed:', submissionError);
-      setError('Es gab ein Problem beim Senden. Bitte versuchen Sie es später erneut.');
+      const message = submissionError instanceof Error ? submissionError.message : '';
+      setError(
+        message && message !== 'quick_check_failed'
+          ? message
+          : 'Es gab ein Problem beim Senden. Bitte versuchen Sie es später erneut.',
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -484,7 +471,7 @@ export default function QuickCheck() {
           </h2>
           <p className="mx-auto max-w-2xl text-lg font-light leading-8 text-[var(--color-text-muted)]">
             Wir haben Ihren Schnellcheck erhalten und schicken die Zusammenfassung an Ihre E-Mail-Adresse.
-            Wenn Sie möchten, können Sie darunter direkt noch Zur Anfrage.
+            Wir melden uns mit der nächsten sinnvollen Einordnung bei Ihnen.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <a href="#anfrage" className="cta-btn text-sm font-semibold tracking-[0.08em]">
@@ -528,7 +515,7 @@ export default function QuickCheck() {
           In 2 Minuten prüfen, ob sich ein Gutachten lohnt
         </h2>
         <p className="mx-auto max-w-3xl text-lg font-light leading-8 text-[var(--color-text-muted)]">
-          Jetzt schnell herausfinden, ob sich ein Gutachten für Sie rechnet.
+          Jetzt schnell herausfinden, ob sich ein Gutachten für Sie rechnet.
         </p>
       </motion.div>
 

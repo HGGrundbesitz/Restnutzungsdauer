@@ -1,4 +1,4 @@
-﻿create extension if not exists pgcrypto;
+create extension if not exists pgcrypto;
 
 create table if not exists public.property_requests (
   id uuid default gen_random_uuid() primary key,
@@ -51,6 +51,7 @@ drop policy if exists "Allow authenticated select" on public.property_requests;
 drop policy if exists "Allow authenticated update" on public.property_requests;
 drop policy if exists "Allow authenticated delete" on public.property_requests;
 drop policy if exists "Allow public insert property requests" on public.property_requests;
+drop policy if exists "Allow public quick check insert" on public.property_requests;
 drop policy if exists "Allow team admin select property requests" on public.property_requests;
 drop policy if exists "Allow team admin update property requests" on public.property_requests;
 drop policy if exists "Allow team admin delete property requests" on public.property_requests;
@@ -58,9 +59,13 @@ drop policy if exists "Allow authenticated select property requests" on public.p
 drop policy if exists "Allow authenticated update property requests" on public.property_requests;
 drop policy if exists "Allow authenticated delete property requests" on public.property_requests;
 
+grant usage on schema public to anon, authenticated;
+grant insert on table public.property_requests to anon, authenticated;
+grant select, update, delete on table public.property_requests to authenticated;
+
 create policy "Allow public insert property requests" on public.property_requests
   for insert
-  to anon, authenticated
+  to public
   with check (true);
 
 create policy "Allow authenticated select property requests" on public.property_requests
