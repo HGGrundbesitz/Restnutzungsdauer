@@ -9,6 +9,8 @@ import QuickCheck from '@/components/QuickCheck';
 import RequestForm from '@/components/RequestForm';
 import FAQ from '@/components/FAQ';
 import Footer from '@/components/Footer';
+import LegalTrustBox from '@/components/LegalTrustBox';
+import RequiredDocuments from '@/components/RequiredDocuments';
 import {motion, useScroll, useSpring} from 'motion/react';
 
 export default function Home() {
@@ -21,16 +23,13 @@ export default function Home() {
 
   return (
     <main className="overflow-x-hidden text-[var(--color-ink)]">
-      <motion.div
-        className="fixed top-0 left-0 right-0 h-1 bg-[var(--color-accent)] origin-left z-[100]"
-        style={{scaleX}}
-      />
+      <motion.div className="fixed left-0 right-0 top-0 z-[100] h-1 origin-left bg-[var(--color-accent)]" style={{scaleX}} />
       <Header />
-
       <Hero />
-
       <div className="relative z-10 w-full">
         <QuickCheck />
+        <RequiredDocuments />
+        <LegalTrustBox />
         <ValueProposition />
         <HowItWorks />
         <AboutUs />
@@ -41,5 +40,3 @@ export default function Home() {
     </main>
   );
 }
-
-

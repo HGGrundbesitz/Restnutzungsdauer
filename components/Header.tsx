@@ -7,6 +7,7 @@ import {cn} from '@/lib/utils';
 
 const navItems = [
   {href: '#ersteinschaetzung', label: 'Ersteinschätzung'},
+  {href: '#unterlagen', label: 'Unterlagen'},
   {href: '#vorteile', label: 'Vorteile'},
   {href: '#prozess', label: 'Prozess'},
   {href: '#warum-wir', label: 'Warum wir'},
@@ -84,10 +85,10 @@ export default function Header() {
 
             <div className="flex items-center gap-2">
               <a
-                href="#anfrage"
+                href="#ersteinschaetzung"
                 className="hidden items-center gap-1.5 rounded-full bg-[var(--color-contrast-surface)] px-4 py-2.5 text-[10px] font-extrabold uppercase tracking-[0.2em] text-[var(--color-contrast-ink)] shadow-[0_18px_34px_-22px_rgba(0,0,0,0.34)] transition-all duration-300 hover:-translate-y-0.5 sm:inline-flex"
               >
-                Anfrage
+                Check
                 <ArrowUpRight size={14} />
               </a>
 
@@ -143,11 +144,11 @@ export default function Header() {
                 </div>
 
                 <a
-                  href="#anfrage"
+                  href="#ersteinschaetzung"
                   onClick={closeMobileMenu}
                   className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-contrast-surface)] px-4 py-3 text-[10px] font-extrabold uppercase tracking-[0.2em] text-[var(--color-contrast-ink)]"
                 >
-                  Jetzt anfragen
+                  Check starten
                   <ArrowUpRight size={14} />
                 </a>
               </motion.div>

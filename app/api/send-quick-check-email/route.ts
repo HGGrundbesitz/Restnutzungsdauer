@@ -211,11 +211,11 @@ async function sendQuickCheckEmails({
     from: getFromAddress('Restnutzungsdauer Schnellcheck'),
     to: [email],
     replyTo: getReplyTo(),
-    subject: 'Ihre digitale Ersteinschätzung ist eingegangen',
+    subject: 'Ihre unverbindliche Ersteinschätzung ist eingegangen',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 620px; margin: 0 auto; color: #111827;">
         <h2>Hallo ${safeFirstName},</h2>
-        <p>vielen Dank für Ihre digitale Ersteinschätzung. Wir haben Ihre Angaben erhalten und melden uns mit den nächsten Schritten bei Ihnen.</p>
+        <p>vielen Dank für Ihre unverbindliche Ersteinschätzung. Wir haben Ihre Angaben erhalten und melden uns mit einer nachvollziehbaren nächsten Einordnung bei Ihnen.</p><p>Hinweis: Der Schnellcheck ersetzt keine Steuerberatung.</p>
         <p><strong>Ihre Zusammenfassung:</strong></p>
         <ul style="padding-left: 18px; line-height: 1.6;">${summaryList}</ul>
         <p><strong>Hochgeladene Dokumente:</strong> ${documentsCount}</p>
@@ -235,8 +235,8 @@ async function sendQuickCheckEmails({
       subject: `Neue Schnellcheck-Anfrage von ${name}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 620px; margin: 0 auto; color: #111827;">
-          <h2>Neue digitale Ersteinschätzung</h2>
-          <p>Ein Interessent hat den Schnellcheck auf der Landingpage abgeschlossen.</p>
+          <h2>Neue unverbindliche Ersteinschätzung</h2>
+          <p>Ein Interessent hat den Schnellcheck auf der Landingpage abgeschlossen. Bitte Angaben und optionale Dokumente fachlich einordnen.</p>
           <ul style="padding-left: 18px; line-height: 1.7;">
             <li><strong>Name:</strong> ${safeName}</li>
             <li><strong>E-Mail:</strong> ${safeEmail}</li>
@@ -324,6 +324,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('Error handling quick-check submission:', error);
-    return NextResponse.json({error: 'Failed to handle quick-check submission'}, {status: 500});
+    return NextResponse.json({error: 'Die Ersteinschätzung konnte gerade nicht verarbeitet werden.'}, {status: 500});
   }
 }

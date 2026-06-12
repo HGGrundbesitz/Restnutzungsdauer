@@ -22,6 +22,7 @@ import {
   Minus,
   Plus,
   Ruler,
+  ShieldCheck,
   Sparkles,
   Store,
   UploadCloud,
@@ -324,7 +325,7 @@ const steps: Step[] = [
     kind: 'documents',
     title: 'Möchten Sie vorhandene Dokumente hochladen?',
     subtitle:
-      'Hier können Sie vorhandene Dokumente hochladen. Ziehen Sie PDF-Dateien in das Feld, wählen Sie Dateien aus oder kopieren und fügen Sie PDFs direkt ein.',
+      'Hier können Sie vorhandene Dokumente hochladen. Das ist optional: Fehlende Unterlagen sind kein Hindernis und können später nachgereicht werden.',
     cta: 'Weiter mit Dokumenten',
     skipLabel: 'Ohne Dokumente weiter machen',
   },
@@ -333,15 +334,15 @@ const steps: Step[] = [
     kind: 'contact',
     title: 'Wohin dürfen wir die Ersteinschätzung schicken?',
     subtitle:
-      'Zum Schluss brauchen wir nur Ihre Kontaktdaten. Wir senden Ihnen die Zusammenfassung per E-Mail und melden uns bei Rückfragen direkt.',
+      'Zum Schluss brauchen wir nur Ihre Kontaktdaten. Wir senden Ihnen die Zusammenfassung per E-Mail und melden uns mit der nächsten sinnvollen Einordnung.',
     cta: 'Ersteinschätzung anfragen',
   },
 ];
 
 const trustNotes = [
-  '100% kostenlos und unverbindlich',
+  'Unverbindlich starten',
   'In rund 2 Minuten beantwortet',
-  'Digital vorbereitet statt Hin und Her per Telefon',
+  'Kein Auftrag durch den Schnellcheck',
 ];
 
 const ageLabels: Record<string, string> = {
@@ -633,11 +634,11 @@ export default function QuickCheck() {
             <BadgeCheck size={36} />
           </div>
           <h2 className="mb-4 font-heading text-3xl font-semibold tracking-tight text-[var(--color-ink)] md:text-4xl">
-            Danke, Ihre Ersteinschätzung ist unterwegs.
+            Danke, Ihre Ersteinschätzung wurde übermittelt.
           </h2>
           <p className="mx-auto max-w-2xl text-lg font-light leading-8 text-[var(--color-text-muted)]">
-            Wir haben Ihren Schnellcheck erhalten und schicken die Zusammenfassung an Ihre E-Mail-Adresse.
-            Wir melden uns mit der nächsten sinnvollen Einordnung bei Ihnen.
+            Wir haben Ihren Schnellcheck erhalten und melden uns mit einer nachvollziehbaren nächsten Einordnung bei Ihnen.
+            Die Zusammenfassung geht zusätzlich an Ihre E-Mail-Adresse.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <a href="#anfrage" className="cta-btn text-sm font-semibold tracking-[0.08em]">
@@ -907,14 +908,14 @@ export default function QuickCheck() {
                       <FileCheck2 size={30} />
                     </div>
                     <h4 className="font-heading text-2xl font-semibold tracking-tight text-[var(--color-ink)]">
-                      Hier können Sie vorhandene Dokumente hochladen
+                      Vorhandene Dokumente optional hochladen
                     </h4>
                     <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-[var(--color-text-muted)]">
                       PDF-Dateien hier hineinziehen, über den Button auswählen oder das Feld anklicken und kopierte PDFs mit
                       <span className="mx-1 rounded-full bg-[var(--color-accent-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--color-accent)]">
                         Strg + V
                       </span>
-                      einfügen.
+                      einfügen. Sie können den Schnellcheck auch ohne Dokumente abschließen.
                     </p>
 
                     <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -932,6 +933,17 @@ export default function QuickCheck() {
                     </div>
                   </div>
 
+                  <div className="mt-4 grid gap-3 rounded-[1.2rem] border border-[var(--color-border)] bg-white/78 p-4 text-left text-sm leading-7 text-[var(--color-text-muted)] sm:grid-cols-2">
+                    <div className="flex items-start gap-3">
+                      <ShieldCheck size={17} className="mt-1 shrink-0 text-[var(--color-accent)]" />
+                      <span>Der Upload ist freiwillig. Fehlende Unterlagen sind kein Hindernis und können später ergänzt werden.</span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <FileCheck2 size={17} className="mt-1 shrink-0 text-[var(--color-accent)]" />
+                      <span>Ihre Dateien werden ausschließlich zur Bearbeitung Ihrer Anfrage genutzt. Details stehen in den Datenschutzhinweisen.</span>
+                    </div>
+                  </div>
+
                   {documentError ? (
                     <div className="mt-4 rounded-xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-700">
                       {documentError}
@@ -941,7 +953,7 @@ export default function QuickCheck() {
                   <div className="mt-5 grid gap-3">
                     {documentUploads.length === 0 ? (
                       <div className="theme-panel-muted rounded-[1.2rem] p-4 text-center text-sm leading-7 text-[var(--color-text-muted)]">
-                        Noch keine Dokumente ausgewählt. Sie können den Schnellcheck auch ohne Dokumente abschließen.
+                        Noch keine Dokumente ausgewählt. Sie können den Schnellcheck ohne Dokumente abschließen und Unterlagen später nachreichen.
                       </div>
                     ) : (
                       documentUploads.map((document) => (
@@ -1057,7 +1069,7 @@ export default function QuickCheck() {
                       />
                       <span>
                         Ich habe die Datenschutzhinweise gelesen und bin mit der Verarbeitung meiner Angaben
-                        zur Bearbeitung der Ersteinschätzung einverstanden.
+                        und optional hochgeladenen Dokumente zur Bearbeitung der Ersteinschätzung einverstanden.
                       </span>
                     </label>
                   </div>
@@ -1092,7 +1104,7 @@ export default function QuickCheck() {
                       {isSubmitting ? 'Wird gesendet...' : currentStep.cta}
                     </button>
                     <p className="text-sm font-light text-[var(--color-text-muted)]">
-                      Wir senden Ihre Angaben sicher ab und melden uns mit der passenden nächsten Einordnung.
+                      Wir senden Ihre Angaben ab und melden uns mit der passenden nächsten Einordnung. Der Schnellcheck ersetzt keine Steuerberatung.
                     </p>
                   </div>
                 </form>
