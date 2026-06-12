@@ -1,6 +1,6 @@
 'use client';
 
-import {type ComponentType, FormEvent, useMemo, useState} from 'react';
+import {type ChangeEvent, type ClipboardEvent, type ComponentType, type DragEvent, FormEvent, useMemo, useRef, useState} from 'react';
 import {AnimatePresence, motion} from 'motion/react';
 import {
   ArrowLeft,
@@ -10,7 +10,10 @@ import {
   Building,
   Building2,
   CheckCircle2,
+  ClipboardPaste,
   DoorOpen,
+  FileCheck2,
+  FileText,
   Flame,
   Hammer,
   House,
@@ -21,9 +24,12 @@ import {
   Ruler,
   Sparkles,
   Store,
+  UploadCloud,
   UserRound,
   Wrench,
+  X,
 } from 'lucide-react';
+import {supabase, isSupabaseConfigured} from '@/lib/supabase';
 
 type PropertyType = 'wohnung' | 'einfamilienhaus' | 'mehrfamilienhaus' | 'wohnGeschaeftshaus' | 'gewerbe';
 type AgeBucket =
@@ -110,6 +116,14 @@ type Step =
       cta: string;
     }
   | {
+      id: 'documents';
+      kind: 'documents';
+      title: string;
+      subtitle: string;
+      cta: string;
+      skipLabel: string;
+    }
+  | {
       id: 'contact';
       kind: 'contact';
       title: string;
@@ -140,6 +154,14 @@ const INITIAL_CONTACT: ContactData = {
   email: '',
   consent: false,
 };
+
+type DocumentUpload = {
+  id: string;
+  file: File;
+};
+
+const MAX_DOCUMENTS = 6;
+const MAX_DOCUMENT_SIZE = 15 * 1024 * 1024;
 
 const steps: Step[] = [
   {
@@ -298,6 +320,15 @@ const steps: Step[] = [
     cta: 'Weiter',
   },
   {
+    id: 'documents',
+    kind: 'documents',
+    title: 'Möchten Sie vorhandene Dokumente hochladen?',
+    subtitle:
+      'Hier können Sie vorhandene Dokumente hochladen. Ziehen Sie PDF-Dateien in das Feld, wählen Sie Dateien aus oder kopieren und fügen Sie PDFs direkt ein.',
+    cta: 'Weiter mit Dokumenten',
+    skipLabel: 'Ohne Dokumente weiter machen',
+  },
+  {
     id: 'contact',
     kind: 'contact',
     title: 'Wohin dürfen wir die Ersteinschätzung schicken?',
@@ -341,6 +372,31 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
+function createDocumentId() {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID();
+  }
+
+  return `document-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function sanitizeFileName(fileName: string) {
+  return fileName
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9._-]/g, '-')
+    .replace(/-+/g, '-')
+    .toLowerCase();
+}
+
+function formatFileSize(size: number) {
+  if (size < 1024 * 1024) {
+    return `${Math.max(1, Math.round(size / 1024))} KB`;
+  }
+
+  return `${(size / 1024 / 1024).toFixed(1).replace('.', ',')} MB`;
+}
+
 export default function QuickCheck() {
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Answers>(INITIAL_ANSWERS);
@@ -348,6 +404,10 @@ export default function QuickCheck() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [documentUploads, setDocumentUploads] = useState<DocumentUpload[]>([]);
+  const [documentError, setDocumentError] = useState<string | null>(null);
+  const [isDragActive, setIsDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const currentStep = steps[stepIndex];
   const progress = ((stepIndex + 1) / steps.length) * 100;
@@ -367,8 +427,14 @@ export default function QuickCheck() {
       ['Baujahr', String(answers.yearBuilt)],
       ['Wohn- und Nutzfläche', `${answers.area} m²`],
       ['Nutzungseinheiten', String(answers.units)],
+      [
+        'Dokumente',
+        documentUploads.length > 0
+          ? `${documentUploads.length} PDF-Datei${documentUploads.length === 1 ? '' : 'en'}`
+          : 'Ohne Dokumente',
+      ],
     ];
-  }, [answers]);
+  }, [answers, documentUploads.length]);
 
   const goNext = () => setStepIndex((current) => Math.min(current + 1, steps.length - 1));
   const goBack = () => {
@@ -398,6 +464,103 @@ export default function QuickCheck() {
     }));
   };
 
+  const handleDocumentFiles = (files: FileList | File[]) => {
+    const incomingFiles = Array.from(files);
+
+    if (incomingFiles.length === 0) {
+      return;
+    }
+
+    const warnings: string[] = [];
+    const validFiles = incomingFiles.reduce<DocumentUpload[]>((accepted, file) => {
+      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+
+      if (!isPdf) {
+        warnings.push(`${file.name}: Bitte nur PDF-Dateien hochladen.`);
+        return accepted;
+      }
+
+      if (file.size > MAX_DOCUMENT_SIZE) {
+        warnings.push(`${file.name}: Maximal ${formatFileSize(MAX_DOCUMENT_SIZE)} pro PDF.`);
+        return accepted;
+      }
+
+      accepted.push({id: createDocumentId(), file});
+      return accepted;
+    }, []);
+
+    const remainingSlots = MAX_DOCUMENTS - documentUploads.length;
+    const filesToAdd = validFiles.slice(0, Math.max(0, remainingSlots));
+
+    if (validFiles.length > filesToAdd.length) {
+      warnings.push(`Maximal ${MAX_DOCUMENTS} PDF-Dateien pro Schnellcheck.`);
+    }
+
+    if (filesToAdd.length > 0) {
+      setDocumentUploads((current) => [...current, ...filesToAdd].slice(0, MAX_DOCUMENTS));
+    }
+
+    setDocumentError(warnings[0] ?? null);
+    setError(null);
+  };
+
+  const handleDocumentInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      handleDocumentFiles(event.target.files);
+      event.target.value = '';
+    }
+  };
+
+  const handleDocumentDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragActive(false);
+    handleDocumentFiles(event.dataTransfer.files);
+  };
+
+  const handleDocumentPaste = (event: ClipboardEvent<HTMLDivElement>) => {
+    if (event.clipboardData.files.length > 0) {
+      event.preventDefault();
+      handleDocumentFiles(event.clipboardData.files);
+    }
+  };
+
+  const removeDocument = (documentId: string) => {
+    setDocumentUploads((current) => current.filter((document) => document.id !== documentId));
+    setDocumentError(null);
+  };
+
+  const uploadQuickCheckDocuments = async (email: string) => {
+    if (documentUploads.length === 0) {
+      return [];
+    }
+
+    if (!isSupabaseConfigured) {
+      throw new Error('Der Dokumenten-Upload ist nicht konfiguriert. Bitte Supabase-Umgebung prüfen.');
+    }
+
+    const safeEmail = email.replace(/[^a-zA-Z0-9._-]/g, '-').toLowerCase();
+    const folder = `requests/quick-check/${Date.now()}-${safeEmail}`;
+    const uploadedPaths: string[] = [];
+
+    for (const [index, document] of documentUploads.entries()) {
+      const fileName = sanitizeFileName(document.file.name || `dokument-${index + 1}.pdf`);
+      const path = `${folder}/${index + 1}-${fileName}`;
+      const {error: uploadError} = await supabase.storage.from('documents').upload(path, document.file, {
+        cacheControl: '3600',
+        contentType: document.file.type || 'application/pdf',
+        upsert: false,
+      });
+
+      if (uploadError) {
+        throw new Error(`Dokument "${document.file.name}" konnte nicht hochgeladen werden: ${uploadError.message}`);
+      }
+
+      uploadedPaths.push(path);
+    }
+
+    return uploadedPaths;
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
@@ -424,6 +587,8 @@ export default function QuickCheck() {
     setIsSubmitting(true);
 
     try {
+      const documentPaths = await uploadQuickCheckDocuments(email);
+
       const response = await fetch('/api/send-quick-check-email', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -435,6 +600,7 @@ export default function QuickCheck() {
           consent: contact.consent,
           address: answers.address.trim() || 'Nicht angegeben',
           year: answers.yearBuilt,
+          documents: documentPaths,
           answers: summary,
         }),
       });
@@ -484,6 +650,8 @@ export default function QuickCheck() {
                 setStepIndex(0);
                 setAnswers(INITIAL_ANSWERS);
                 setContact(INITIAL_CONTACT);
+                setDocumentUploads([]);
+                setDocumentError(null);
                 setError(null);
               }}
               className="theme-panel rounded-full px-6 py-3 text-sm font-semibold text-[var(--color-ink)] transition-all hover:-translate-y-0.5 hover:bg-[var(--color-surface-strong)]"
@@ -703,6 +871,127 @@ export default function QuickCheck() {
                   </button>
                 </div>
               ) : null}
+
+              {currentStep.kind === 'documents' ? (
+                <div className="mx-auto max-w-4xl">
+                  <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-[1.8rem] bg-[var(--color-accent-soft)] text-[var(--color-accent)]">
+                    <UploadCloud size={40} />
+                  </div>
+
+                  <div
+                    tabIndex={0}
+                    onPaste={handleDocumentPaste}
+                    onDragEnter={(event) => {
+                      event.preventDefault();
+                      setIsDragActive(true);
+                    }}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDragLeave={() => setIsDragActive(false)}
+                    onDrop={handleDocumentDrop}
+                    className={`group relative overflow-hidden rounded-[1.6rem] border border-dashed p-6 text-center outline-none transition-all duration-300 sm:p-8 ${
+                      isDragActive
+                        ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] shadow-[0_28px_70px_-45px_rgba(37,99,235,0.45)]'
+                        : 'border-[var(--color-border-strong)] bg-white/78 hover:-translate-y-1 hover:border-[var(--color-accent)] hover:bg-[var(--color-surface-strong)]'
+                    }`}
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="application/pdf,.pdf"
+                      multiple
+                      onChange={handleDocumentInputChange}
+                      className="hidden"
+                    />
+                    <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[rgba(37,99,235,0.28)] to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                    <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-[1.2rem] bg-[var(--color-accent-soft)] text-[var(--color-accent)]">
+                      <FileCheck2 size={30} />
+                    </div>
+                    <h4 className="font-heading text-2xl font-semibold tracking-tight text-[var(--color-ink)]">
+                      Hier können Sie vorhandene Dokumente hochladen
+                    </h4>
+                    <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-[var(--color-text-muted)]">
+                      PDF-Dateien hier hineinziehen, über den Button auswählen oder das Feld anklicken und kopierte PDFs mit
+                      <span className="mx-1 rounded-full bg-[var(--color-accent-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--color-accent)]">
+                        Strg + V
+                      </span>
+                      einfügen.
+                    </p>
+
+                    <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="cta-btn w-full justify-center text-sm font-semibold tracking-[0.08em] sm:w-auto"
+                      >
+                        PDF hochladen
+                      </button>
+                      <div className="theme-panel inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-[var(--color-text-muted)] sm:w-auto">
+                        <ClipboardPaste size={16} />
+                        Kopieren & einfügen möglich
+                      </div>
+                    </div>
+                  </div>
+
+                  {documentError ? (
+                    <div className="mt-4 rounded-xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-700">
+                      {documentError}
+                    </div>
+                  ) : null}
+
+                  <div className="mt-5 grid gap-3">
+                    {documentUploads.length === 0 ? (
+                      <div className="theme-panel-muted rounded-[1.2rem] p-4 text-center text-sm leading-7 text-[var(--color-text-muted)]">
+                        Noch keine Dokumente ausgewählt. Sie können den Schnellcheck auch ohne Dokumente abschließen.
+                      </div>
+                    ) : (
+                      documentUploads.map((document) => (
+                        <div
+                          key={document.id}
+                          className="theme-panel-muted flex items-center justify-between gap-3 rounded-[1.2rem] px-4 py-3"
+                        >
+                          <div className="flex min-w-0 items-center gap-3">
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[1rem] bg-white text-[var(--color-accent)] shadow-sm">
+                              <FileText size={18} />
+                            </div>
+                            <div className="min-w-0 text-left">
+                              <div className="truncate text-sm font-semibold text-[var(--color-ink)]" title={document.file.name}>
+                                {document.file.name}
+                              </div>
+                              <div className="mt-1 text-xs text-[var(--color-text-muted)]">{formatFileSize(document.file.size)}</div>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeDocument(document.id)}
+                            className="theme-panel flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--color-text-muted)] transition-all hover:text-red-600"
+                            aria-label={`${document.file.name} entfernen`}
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDocumentUploads([]);
+                        setDocumentError(null);
+                        goNext();
+                      }}
+                      className="theme-panel w-full rounded-full px-6 py-4 text-sm font-semibold text-[var(--color-ink)] transition-all hover:-translate-y-0.5 hover:bg-[var(--color-surface-strong)] sm:w-auto"
+                    >
+                      {currentStep.skipLabel}
+                    </button>
+                    <button type="button" onClick={goNext} className="cta-btn w-full justify-center text-sm font-semibold tracking-[0.08em] sm:w-auto">
+                      {documentUploads.length > 0 ? `${currentStep.cta} (${documentUploads.length})` : 'Weiter'}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
 
               {currentStep.kind === 'contact' ? (
                 <form onSubmit={handleSubmit} className="mx-auto max-w-6xl">

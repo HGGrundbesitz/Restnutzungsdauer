@@ -107,6 +107,7 @@ async function saveQuickCheckRequest({
   address,
   year,
   answers,
+  documents,
 }: {
   name: string;
   email: string;
@@ -114,6 +115,7 @@ async function saveQuickCheckRequest({
   address: string;
   year: number | null;
   answers: NormalizedSummaryEntry[];
+  documents: string[];
 }) {
   const supabase = getSupabaseRouteClient();
 
@@ -130,7 +132,7 @@ async function saveQuickCheckRequest({
     phone,
     address,
     year,
-    documents: [] as string[],
+    documents,
     source: 'quick_check',
     quick_check_answers: answers,
   };
@@ -148,7 +150,7 @@ async function saveQuickCheckRequest({
     email,
     address,
     year,
-    documents: [] as string[],
+    documents,
   };
 
   const {data: fallbackData, error: fallbackError} = await supabase
@@ -181,12 +183,14 @@ async function sendQuickCheckEmails({
   email,
   phone,
   answers,
+  documentsCount,
 }: {
   name: string;
   firstName: string;
   email: string;
   phone: string;
   answers: NormalizedSummaryEntry[];
+  documentsCount: number;
 }) {
   const resend = getResendClient();
 
@@ -214,6 +218,7 @@ async function sendQuickCheckEmails({
         <p>vielen Dank für Ihre digitale Ersteinschätzung. Wir haben Ihre Angaben erhalten und melden uns mit den nächsten Schritten bei Ihnen.</p>
         <p><strong>Ihre Zusammenfassung:</strong></p>
         <ul style="padding-left: 18px; line-height: 1.6;">${summaryList}</ul>
+        <p><strong>Hochgeladene Dokumente:</strong> ${documentsCount}</p>
         <p>Wenn Sie möchten, können Sie im Anschluss weitere Unterlagen über das Anfrageformular nachreichen.</p>
         <p>Mit freundlichen Grüßen<br />Ihr Gutachten-Team</p>
       </div>
@@ -239,6 +244,7 @@ async function sendQuickCheckEmails({
           </ul>
           <p><strong>Antworten aus dem Schnellcheck:</strong></p>
           <ul style="padding-left: 18px; line-height: 1.6;">${summaryList}</ul>
+          <p><strong>Hochgeladene Dokumente:</strong> ${documentsCount}</p>
         </div>
       `,
     });
@@ -256,6 +262,7 @@ export async function POST(request: Request) {
       phone?: string;
       address?: string;
       year?: number;
+      documents?: string[];
       answers?: IncomingSummaryEntry[];
     };
 
@@ -264,6 +271,9 @@ export async function POST(request: Request) {
     const email = body.email?.trim() ?? '';
     const phone = body.phone?.trim() ?? '';
     const answers = Array.isArray(body.answers) ? normalizeAnswers(body.answers) : [];
+    const documents = Array.isArray(body.documents)
+      ? body.documents.filter((path): path is string => typeof path === 'string' && path.trim().length > 0)
+      : [];
     const address = (body.address?.trim() || findAnswerValue(answers, 'Adresse') || 'Nicht angegeben').trim();
     const parsedYear = typeof body.year === 'number' ? body.year : Number(findAnswerValue(answers, 'Baujahr'));
     const year = Number.isFinite(parsedYear) ? Math.round(parsedYear) : null;
@@ -283,6 +293,7 @@ export async function POST(request: Request) {
       address,
       year,
       answers,
+      documents,
     });
 
     if (!saveResult.ok) {
@@ -295,7 +306,7 @@ export async function POST(request: Request) {
     let emailResult: {emailSent: boolean; warning: string | null} = {emailSent: false, warning: null};
 
     try {
-      emailResult = await sendQuickCheckEmails({name, firstName, email, phone, answers});
+      emailResult = await sendQuickCheckEmails({name, firstName, email, phone, answers, documentsCount: documents.length});
     } catch (emailError) {
       console.error('Quick-check email failed after successful save:', emailError);
       emailResult = {
