@@ -507,7 +507,7 @@ body::after {
 .is-inview .tl-spine::after { transform: scaleY(1); }
 
 /* Form inputs */
-input[type="text"], input[type="email"], input[type="number"], select {
+input[type="text"], input[type="email"], input[type="tel"], input[type="number"], select {
   width: 100%;
   padding: 0.75rem 1rem;
   border-radius: 0.75rem;

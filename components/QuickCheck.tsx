@@ -20,6 +20,7 @@ import {
   LayoutGrid,
   MapPin,
   Minus,
+  Phone,
   Plus,
   Ruler,
   ShieldCheck,
@@ -1036,14 +1037,21 @@ export default function QuickCheck() {
                     </div>
                     <div>
                       <label htmlFor="quickcheck-phone">Telefonnummer</label>
-                      <input
-                        id="quickcheck-phone"
-                        type="tel"
-                        value={contact.phone}
-                        onChange={(event) => setContact((current) => ({...current, phone: event.target.value}))}
-                        placeholder="+49 ..."
-                        required
-                      />
+                      <div className="group flex min-h-[54px] items-center overflow-hidden rounded-[1.1rem] border border-[var(--color-border-strong)] bg-white/88 shadow-sm transition-all duration-300 focus-within:border-[var(--color-accent)] focus-within:bg-[var(--color-surface-strong)] focus-within:shadow-[0_0_0_3px_var(--color-accent-soft)]">
+                        <div className="flex h-full items-center gap-2 border-r border-[var(--color-border)] bg-[var(--color-accent-soft)] px-4 text-sm font-semibold text-[var(--color-ink)]">
+                          <Phone size={16} className="text-[var(--color-accent)]" />
+                          <span>+49</span>
+                        </div>
+                        <input
+                          id="quickcheck-phone"
+                          type="tel"
+                          value={contact.phone}
+                          onChange={(event) => setContact((current) => ({...current, phone: event.target.value}))}
+                          placeholder="151 23456789"
+                          required
+                          className="!mb-0 min-w-0 flex-1 border-0 !bg-transparent !px-4 !py-3.5 text-base !text-[var(--color-ink)] shadow-none outline-none focus:!shadow-none"
+                        />
+                      </div>
                     </div>
                     <div>
                       <label htmlFor="quickcheck-email">E-Mail</label>
@@ -1068,8 +1076,19 @@ export default function QuickCheck() {
                         required
                       />
                       <span>
-                        Ich habe die Datenschutzhinweise gelesen und bin mit der Verarbeitung meiner Angaben
-                        und optional hochgeladenen Dokumente zur Bearbeitung der Ersteinschätzung einverstanden.
+                        Ich habe die{' '}
+                        <a href="/datenschutz" className="font-semibold text-[var(--color-accent)] transition-colors hover:text-[var(--color-ink)]">
+                          Datenschutzhinweise
+                        </a>{' '}
+                        gelesen und bin mit der Verarbeitung meiner Angaben und optional hochgeladenen Dokumente zur Bearbeitung der Ersteinschätzung einverstanden. Die{' '}
+                        <a href="/agb" className="font-semibold text-[var(--color-accent)] transition-colors hover:text-[var(--color-ink)]">
+                          AGB
+                        </a>{' '}
+                        und{' '}
+                        <a href="/cookies" className="font-semibold text-[var(--color-accent)] transition-colors hover:text-[var(--color-ink)]">
+                          Cookie-Hinweise
+                        </a>{' '}
+                        sind verlinkt.
                       </span>
                     </label>
                   </div>
