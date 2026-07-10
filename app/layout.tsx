@@ -6,7 +6,7 @@ import CookieNotice from '@/components/CookieNotice';
 export const metadata: Metadata = {
   title: 'Restnutzungsdauer-Gutachten | RND Gutachten',
   description:
-    'Digitale Ersteinschätzung und objektbezogene Restnutzungsdauer-Gutachten für vermietete Immobilien. Nachvollziehbar vorbereitet für Steuerberatung und Finanzamt.',
+    'Kostenlose Ersteinschätzung und objektbezogene Restnutzungsdauer-Gutachten für vermietete Immobilien. Nachvollziehbar vorbereitet für Steuerberatung und Finanzamt.',
 };
 
 export default function RootLayout({children}: {children: React.ReactNode}) {

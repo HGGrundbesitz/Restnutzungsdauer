@@ -1,4 +1,18 @@
 @import "tailwindcss";
+
+@layer components {
+  .rnd-input {
+    @apply h-14 w-full rounded-xl border border-[var(--color-border)] bg-white px-4 text-base text-[var(--color-ink)] outline-none transition placeholder:text-[var(--color-text-muted)]/60 focus:border-[var(--color-accent)] focus:ring-4 focus:ring-[var(--color-accent-soft)];
+  }
+
+  .rnd-select {
+    @apply h-12 w-full rounded-xl border border-[var(--color-border)] bg-white px-3 text-sm font-semibold text-[var(--color-ink)] outline-none transition focus:border-[var(--color-accent)] focus:ring-4 focus:ring-[var(--color-accent-soft)];
+  }
+
+  .rnd-secondary-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--color-ink)] shadow-[0_18px_42px_-34px_rgba(15,23,42,0.32)] transition duration-300 hover:-translate-y-0.5 hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-strong)];
+  }
+}
 @plugin "@tailwindcss/typography";
 
 @theme {
@@ -49,6 +63,7 @@
   }
 
   html {
+    position: relative;
     max-width: 100%;
     overflow-x: clip;
     scroll-behavior: smooth;

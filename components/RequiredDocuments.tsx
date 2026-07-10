@@ -35,7 +35,8 @@ const helpfulDocuments = [
   'Denkmalschutz- oder Nutzungsbeschränkungen, falls vorhanden',
 ];
 
-const photoDocumentation = [
+const additionalDocuments = [
+  ...helpfulDocuments,
   'Außenansichten des Gebäudes',
   'Dach, Dachboden oder Dämmung',
   'Keller, Heizungsanlage und Leitungen',
@@ -158,10 +159,9 @@ export default function RequiredDocuments() {
         transition={{duration: 0.45, ease: [0.16, 1, 0.3, 1]}}
         className="overflow-hidden"
       >
-        <div className="grid gap-4 rounded-[2rem] border border-[var(--color-border)] bg-white/82 p-5 shadow-[var(--shadow-soft)] backdrop-blur-xl lg:grid-cols-3 lg:p-6">
+        <div className="grid gap-4 rounded-[2rem] border border-[var(--color-border)] bg-white/82 p-5 shadow-[var(--shadow-soft)] backdrop-blur-xl lg:grid-cols-2 lg:p-6">
           <DetailList title="Kernunterlagen" icon={FolderCheck} items={coreDocuments} />
-          <DetailList title="Zusätzlich hilfreich" icon={FileText} items={helpfulDocuments} />
-          <DetailList title="Foto-Dokumentation" icon={Camera} items={photoDocumentation} />
+          <DetailList title="Zusätzlich hilfreich - inklusive Fotos" icon={Camera} items={additionalDocuments} />
         </div>
       </motion.div>
     </section>

@@ -37,7 +37,7 @@ export default function AboutUs() {
             <div className="glass-panel absolute bottom-6 left-5 right-5 rounded-2xl p-5 backdrop-blur-xl md:bottom-10 md:left-10 md:right-10 md:p-6">
               <div className="flex items-center gap-4">
                 <div className="flex h-14 w-14 items-center justify-center rounded-full border border-white/20 bg-white/10 backdrop-blur-md"><ClipboardCheck size={24} className="text-white" /></div>
-                <div><h4 className="font-heading text-lg font-semibold text-white">Strukturierte Prüfung</h4><p className="text-sm leading-6 text-white/74">Unterlagen, Fotos und Objektzustand werden nachvollziehbar eingeordnet.</p></div>
+                <div><h4 className="font-heading text-lg font-semibold text-white">Persönlich begleitet</h4><p className="text-sm leading-6 text-white/88">Unsere Sachverständigen helfen Ihnen in allen Belangen rund um das Thema Restnutzungsdauer.</p></div>
               </div>
             </div>
             <div className="theme-panel absolute right-5 top-5 flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-[var(--color-ink)] md:right-8 md:top-8"><MapPinned size={15} className="text-[var(--color-accent)]" />Bundesweit</div>

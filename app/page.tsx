@@ -2,7 +2,6 @@
 
 import Header from '@/components/Header';
 import Hero from '@/components/Hero';
-import ValueProposition from '@/components/ValueProposition';
 import HowItWorks from '@/components/HowItWorks';
 import AboutUs from '@/components/AboutUs';
 import QuickCheck from '@/components/QuickCheck';
@@ -30,7 +29,6 @@ export default function Home() {
         <QuickCheck />
         <RequiredDocuments />
         <LegalTrustBox />
-        <ValueProposition />
         <HowItWorks />
         <AboutUs />
         <RequestForm />

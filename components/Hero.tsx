@@ -1,7 +1,5 @@
-import {ArrowRight, CheckCircle2} from 'lucide-react';
+import {ArrowRight} from 'lucide-react';
 import {motion} from 'motion/react';
-
-const trustNotes = ['Digital vorbereitet', 'Diskret begleitet', 'Objektbezogen geprüft'];
 
 export default function Hero() {
   return (
@@ -13,36 +11,23 @@ export default function Hero() {
       <motion.div aria-hidden="true" animate={{y: [0, -12, 0], opacity: [0.3, 0.46, 0.3]}} transition={{duration: 8, repeat: Infinity, ease: 'easeInOut'}} className="absolute right-[8%] top-[22%] hidden h-44 w-44 rounded-full border border-[rgba(37,99,235,0.14)] bg-[rgba(255,255,255,0.25)] backdrop-blur-sm lg:block" />
 
       <div className="relative z-10 mx-auto flex w-full max-w-full flex-col items-center text-center sm:max-w-[1060px]">
-        <motion.div initial={{opacity: 0, y: 18}} animate={{opacity: 1, y: 0}} transition={{duration: 0.7, ease: [0.16, 1, 0.3, 1]}} className="section-eyebrow mb-7 max-w-full flex-wrap justify-center text-center leading-5 shadow-[0_18px_46px_-36px_rgba(15,23,42,0.32)]">
-          <span className="h-2 w-2 rounded-full bg-[var(--color-accent)] shadow-[0_0_0_6px_var(--color-accent-soft)]" />
-          Gebäude-AfA objektbezogen prüfen
-        </motion.div>
-
         <motion.h1 initial={{opacity: 0, y: 24}} animate={{opacity: 1, y: 0}} transition={{duration: 0.8, delay: 0.08, ease: [0.16, 1, 0.3, 1]}} className="display-title max-w-full !text-[clamp(2.15rem,7.3vw,5.35rem)] leading-[0.96] drop-shadow-[0_18px_48px_rgba(255,255,255,0.82)] sm:!text-[clamp(3rem,6vw,5.45rem)]">
           <span className="block">Restnutzungsdauer-Gutachten</span>
           <span className="block bg-[linear-gradient(90deg,#1d4ed8,#2563eb,#0f172a)] bg-clip-text text-transparent">für eine höhere Gebäude-AfA</span>
         </motion.h1>
 
         <motion.p initial={{opacity: 0, y: 18}} animate={{opacity: 1, y: 0}} transition={{duration: 0.72, delay: 0.18, ease: [0.16, 1, 0.3, 1]}} className="mx-auto mt-6 w-full max-w-[54rem] px-1 text-base font-semibold leading-8 text-[#435064] md:text-lg">
-          Wir prüfen, ob für Ihre vermietete Immobilie eine kürzere tatsächliche Nutzungsdauer begründbar ist und ob sich ein Gutachten wirtschaftlich lohnt.
+          Wir sind Ihr Sachverständiger für fundierte Gutachten im Bereich Immobilien.
         </motion.p>
 
         <motion.div initial={{opacity: 0, y: 18}} animate={{opacity: 1, y: 0}} transition={{duration: 0.72, delay: 0.28, ease: [0.16, 1, 0.3, 1]}} className="mt-9 flex w-full flex-col justify-center gap-4 sm:w-auto sm:flex-row sm:items-center">
-          <a href="#ersteinschaetzung" className="cta-btn w-full text-center text-sm font-semibold tracking-[0.06em] sm:w-auto">Unverbindliche Ersteinschätzung starten</a>
+          <a href="#ersteinschaetzung" className="cta-btn w-full text-center text-sm font-semibold tracking-[0.06em] sm:w-auto">Kostenlose Ersteinschätzung starten</a>
           <a href="#rechtsgrundlage" className="theme-panel inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-[var(--color-ink)] shadow-[0_14px_32px_-24px_rgba(17,23,35,0.28)] transition-all duration-300 hover:-translate-y-1 hover:bg-[var(--color-surface-strong)] sm:w-auto">
             Anerkennungsvoraussetzungen ansehen
             <ArrowRight size={16} className="text-[var(--color-accent)]" />
           </a>
         </motion.div>
 
-        <motion.div initial={{opacity: 0, y: 16}} animate={{opacity: 1, y: 0}} transition={{duration: 0.72, delay: 0.38, ease: [0.16, 1, 0.3, 1]}} className="mt-8 flex flex-col items-center justify-center gap-3 text-sm font-semibold text-[#506176] sm:flex-row sm:flex-wrap">
-          {trustNotes.map((note) => (
-            <motion.div key={note} whileHover={{y: -4, scale: 1.02}} transition={{duration: 0.28, ease: [0.16, 1, 0.3, 1]}} className="theme-panel flex items-center justify-center gap-2 rounded-full px-4 py-2.5 shadow-[0_14px_34px_-30px_rgba(15,23,42,0.28)]">
-              <CheckCircle2 size={15} className="text-[var(--color-accent)]" />
-              {note}
-            </motion.div>
-          ))}
-        </motion.div>
       </div>
     </section>
   );

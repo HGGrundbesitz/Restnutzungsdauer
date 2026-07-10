@@ -8,7 +8,6 @@ import {cn} from '@/lib/utils';
 const navItems = [
   {href: '#ersteinschaetzung', label: 'Ersteinschätzung'},
   {href: '#unterlagen', label: 'Unterlagen'},
-  {href: '#vorteile', label: 'Vorteile'},
   {href: '#prozess', label: 'Prozess'},
   {href: '#warum-wir', label: 'Warum wir'},
   {href: '#faq', label: 'FAQ'},

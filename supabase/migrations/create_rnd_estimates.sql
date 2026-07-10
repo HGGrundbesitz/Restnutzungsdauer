@@ -1,31 +1,5 @@
-create extension if not exists pgcrypto;
-
 create schema if not exists private;
 revoke all on schema private from public;
-
-create table if not exists public.property_requests (
-  id uuid default gen_random_uuid() primary key,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  name text not null,
-  email text not null,
-  address text not null,
-  year integer,
-  status text default 'pending' not null check (status in ('pending', 'reviewing', 'completed')),
-  documents text[] default '{}'::text[] not null,
-  phone text,
-  source text not null default 'request_form',
-  quick_check_answers jsonb
-);
-
-alter table public.property_requests add column if not exists phone text;
-alter table public.property_requests add column if not exists source text not null default 'request_form';
-alter table public.property_requests add column if not exists quick_check_answers jsonb;
-
-create table if not exists public.admin_users (
-  user_id uuid primary key references auth.users(id) on delete cascade,
-  email text not null unique,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
 
 create table if not exists public.rnd_estimates (
   id uuid default gen_random_uuid() primary key,
@@ -51,14 +25,11 @@ create table if not exists public.rnd_estimates (
   result_copy_version text not null
 );
 
-create index if not exists property_requests_created_at_idx on public.property_requests (created_at desc);
-create index if not exists property_requests_status_idx on public.property_requests (status);
 create index if not exists rnd_estimates_request_id_idx on public.rnd_estimates (request_id);
 create index if not exists rnd_estimates_created_at_idx on public.rnd_estimates (created_at desc);
 
-alter table public.property_requests enable row level security;
-alter table public.admin_users enable row level security;
 alter table public.rnd_estimates enable row level security;
+alter table public.property_requests enable row level security;
 
 create or replace function private.is_team_admin()
 returns boolean
@@ -68,9 +39,7 @@ security definer
 set search_path = ''
 as $$
   select exists (
-    select 1
-    from public.admin_users
-    where user_id = (select auth.uid())
+    select 1 from public.admin_users where user_id = (select auth.uid())
   );
 $$;
 
@@ -78,32 +47,29 @@ revoke all on function private.is_team_admin() from public;
 grant usage on schema private to authenticated;
 grant execute on function private.is_team_admin() to authenticated;
 
-do $$
-declare
-  policy_record record;
-begin
-  for policy_record in select policyname from pg_policies where schemaname = 'public' and tablename = 'property_requests'
-  loop execute format('drop policy if exists %I on public.property_requests', policy_record.policyname); end loop;
-  for policy_record in select policyname from pg_policies where schemaname = 'public' and tablename = 'rnd_estimates'
-  loop execute format('drop policy if exists %I on public.rnd_estimates', policy_record.policyname); end loop;
-end $$;
-
 revoke all on table public.property_requests from anon, authenticated;
 revoke all on table public.rnd_estimates from anon, authenticated;
 grant select, update, delete on table public.property_requests to authenticated;
 grant select on table public.rnd_estimates to authenticated;
 
+drop policy if exists "Allow public insert property requests" on public.property_requests;
+drop policy if exists "Allow authenticated select property requests" on public.property_requests;
+drop policy if exists "Allow authenticated update property requests" on public.property_requests;
+drop policy if exists "Allow authenticated delete property requests" on public.property_requests;
+drop policy if exists "Team admins can read property requests" on public.property_requests;
+drop policy if exists "Team admins can update property requests" on public.property_requests;
+drop policy if exists "Team admins can delete property requests" on public.property_requests;
+
 create policy "Team admins can read property requests" on public.property_requests
   for select to authenticated using ((select private.is_team_admin()));
-
 create policy "Team admins can update property requests" on public.property_requests
   for update to authenticated
   using ((select private.is_team_admin()))
   with check ((select private.is_team_admin()));
-
 create policy "Team admins can delete property requests" on public.property_requests
   for delete to authenticated using ((select private.is_team_admin()));
 
+drop policy if exists "Team admins can read RND estimates" on public.rnd_estimates;
 create policy "Team admins can read RND estimates" on public.rnd_estimates
   for select to authenticated using ((select private.is_team_admin()));
 
@@ -114,30 +80,21 @@ set public = false,
     file_size_limit = excluded.file_size_limit,
     allowed_mime_types = excluded.allowed_mime_types;
 
-do $$
-declare
-  policy_record record;
-begin
-  for policy_record in select policyname from pg_policies where schemaname = 'storage' and tablename = 'objects'
-  loop
-    if policy_record.policyname ilike '%document%' or policy_record.policyname ilike '%request%' or policy_record.policyname ilike '%upload%'
-    then execute format('drop policy if exists %I on storage.objects', policy_record.policyname); end if;
-  end loop;
-end $$;
+drop policy if exists "Allow public request uploads" on storage.objects;
+drop policy if exists "Allow authenticated document access" on storage.objects;
+drop policy if exists "Allow authenticated document updates" on storage.objects;
+drop policy if exists "Allow authenticated document deletes" on storage.objects;
+drop policy if exists "Team admins can read documents" on storage.objects;
+drop policy if exists "Team admins can update documents" on storage.objects;
+drop policy if exists "Team admins can delete documents" on storage.objects;
 
 create policy "Team admins can read documents" on storage.objects
   for select to authenticated
   using (bucket_id = 'documents' and (select private.is_team_admin()));
-
 create policy "Team admins can update documents" on storage.objects
   for update to authenticated
   using (bucket_id = 'documents' and (select private.is_team_admin()))
   with check (bucket_id = 'documents' and (select private.is_team_admin()));
-
 create policy "Team admins can delete documents" on storage.objects
   for delete to authenticated
   using (bucket_id = 'documents' and (select private.is_team_admin()));
-
--- Public inserts are intentionally absent. The Next.js server writes with a
--- Supabase secret key and creates short-lived signed upload tokens for PDFs.
-

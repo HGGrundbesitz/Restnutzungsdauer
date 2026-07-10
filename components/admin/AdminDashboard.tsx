@@ -35,6 +35,21 @@ type QuickCheckAnswer = {
   value: string;
 };
 
+type RndEstimate = {
+  id: string;
+  model_version: string;
+  stichtag: string;
+  building_type_label: string;
+  gnd_years: number | null;
+  actual_age: number;
+  preliminary_rnd: number | null;
+  modernization_points_rounded: number;
+  modified_rnd: number | null;
+  calculation_method: string;
+  result_status: 'calculated' | 'manual_review';
+  warnings: {code: string; message: string}[];
+};
+
 type Request = {
   id: string;
   created_at: string;
@@ -47,6 +62,7 @@ type Request = {
   documents: string[];
   source?: string | null;
   quick_check_answers?: QuickCheckAnswer[] | null;
+  rnd_estimates?: RndEstimate | RndEstimate[] | null;
 };
 
 export default function AdminDashboard({session}: {session: any}) {
@@ -78,7 +94,7 @@ export default function AdminDashboard({session}: {session: any}) {
   const fetchRequests = useCallback(async () => {
     const {data, error} = await supabase
       .from('property_requests')
-      .select('*')
+      .select('*, rnd_estimates(*)')
       .order('created_at', {ascending: false});
 
     if (error) {
@@ -148,6 +164,17 @@ export default function AdminDashboard({session}: {session: any}) {
     }
 
     setIsDeleting(true);
+
+    const requestRecord = requests.find((request) => request.id === requestToDelete);
+    if (requestRecord?.documents?.length) {
+      const {error: documentError} = await supabase.storage.from('documents').remove(requestRecord.documents);
+      if (documentError) {
+        console.error('Error deleting request documents:', documentError);
+        addToast('Dokumente konnten nicht gelöscht werden', 'error');
+        setIsDeleting(false);
+        return;
+      }
+    }
 
     const {error} = await supabase.from('property_requests').delete().eq('id', requestToDelete);
 

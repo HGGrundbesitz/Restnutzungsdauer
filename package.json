@@ -7,10 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "test:rnd": "node --experimental-strip-types --test lib/rnd/calculate-rnd.test.ts lib/rnd/pdf-summary.test.ts",
     "clean": "node -e \"const fs=require('node:fs');for(const path of ['.next','tsconfig.tsbuildinfo'])fs.rmSync(path,{recursive:true,force:true});\""
   },
   "dependencies": {
-    "@google/genai": "^1.47.0",
     "@hookform/resolvers": "^5.2.1",
     "@supabase/supabase-js": "^2.100.1",
     "@vercel/analytics": "^2.0.1",
@@ -20,6 +20,7 @@
     "lucide-react": "^0.553.0",
     "motion": "^12.23.24",
     "next": "^15.4.9",
+    "openai": "^6.46.0",
     "pdf-lib": "^1.17.1",
     "postcss": "^8.5.6",
     "react": "^19.2.1",

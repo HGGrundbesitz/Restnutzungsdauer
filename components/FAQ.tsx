@@ -15,7 +15,7 @@ const faqs = [
   },
   {
     question: 'Brauche ich eine Vor-Ort-Besichtigung?',
-    answer: 'Nicht immer. Viele Fälle lassen sich digital vorbereiten, wenn Unterlagen und Fotos aussagekräftig sind. Falls Objektzustand oder Plausibilität es erfordern, kann eine Vor-Ort-Prüfung transparent empfohlen werden.',
+    answer: 'Ja. Um ein fundiertes Gutachten zu erstellen, ist eine Vor-Ort-Besichtigung nötig. Die digitale Ersteinschätzung und Ihre Unterlagen helfen uns, den Termin gezielt vorzubereiten.',
   },
   {
     question: 'Für wen lohnt sich ein Restnutzungsdauer-Gutachten eher nicht?',

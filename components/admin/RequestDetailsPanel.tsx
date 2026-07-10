@@ -3,12 +3,27 @@
 import {useState} from 'react';
 import {motion} from 'motion/react';
 import Markdown from 'react-markdown';
-import {Calendar, Download, FileText, Loader2, Mail, MapPin, Sparkles, Trash2, User, X} from 'lucide-react';
+import {AlertTriangle, Calculator, Calendar, Download, FileText, Loader2, Mail, MapPin, Phone, Sparkles, Trash2, User, X} from 'lucide-react';
 import {supabase} from '@/lib/supabase';
 
 type QuickCheckAnswer = {
   label: string;
   value: string;
+};
+
+type RndEstimate = {
+  id: string;
+  model_version: string;
+  stichtag: string;
+  building_type_label: string;
+  gnd_years: number | null;
+  actual_age: number;
+  preliminary_rnd: number | null;
+  modernization_points_rounded: number;
+  modified_rnd: number | null;
+  calculation_method: string;
+  result_status: 'calculated' | 'manual_review';
+  warnings: {code: string; message: string}[];
 };
 
 type RequestRecord = {
@@ -23,6 +38,7 @@ type RequestRecord = {
   documents?: string[];
   source?: string | null;
   quick_check_answers?: QuickCheckAnswer[] | null;
+  rnd_estimates?: RndEstimate | RndEstimate[] | null;
 };
 
 type RequestDetailsPanelProps = {
@@ -43,6 +59,7 @@ export default function RequestDetailsPanel({
   const [downloading, setDownloading] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<Record<string, string>>({});
+  const estimate = Array.isArray(request.rnd_estimates) ? request.rnd_estimates[0] : request.rnd_estimates;
 
   const handleDownload = async (path: string) => {
     setDownloading(path);
@@ -70,22 +87,18 @@ export default function RequestDetailsPanel({
     setAnalyzing(path);
 
     try {
-      const {data, error} = await supabase.storage.from('documents').download(path);
-
-      if (error) {
-        throw error;
+      const {data: sessionData, error: sessionError} = await supabase.auth.getSession();
+      if (sessionError || !sessionData.session?.access_token) {
+        throw new Error('Bitte melden Sie sich erneut im Adminbereich an.');
       }
-
-      if (!data) {
-        throw new Error('No data returned');
-      }
-
-      const formData = new FormData();
-      formData.append('file', data, path.split('/').pop() || 'dokument.pdf');
 
       const response = await fetch('/api/analyze-document', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+        body: JSON.stringify({path}),
       });
 
       const result = await response.json();
@@ -160,7 +173,7 @@ export default function RequestDetailsPanel({
             <div className="grid gap-4">
               <InfoRow icon={<User size={16} />} label="Name" value={request.name} />
               <InfoRow icon={<Mail size={16} />} label="E-Mail" value={request.email} />
-              {request.phone ? <InfoRow icon={<Mail size={16} />} label="Telefon" value={request.phone} /> : null}
+              {request.phone ? <InfoRow icon={<Phone size={16} />} label="Telefon" value={request.phone} /> : null}
               <InfoRow icon={<Calendar size={16} />} label="Eingang" value={new Date(request.created_at).toLocaleString('de-DE')} />
               <InfoRow icon={<Sparkles size={16} />} label="Quelle" value={getSourceLabel(request.source)} />
             </div>
@@ -187,6 +200,30 @@ export default function RequestDetailsPanel({
                   </div>
                 ))}
               </div>
+            </div>
+          ) : null}
+
+          {estimate ? (
+            <div className="mb-8 space-y-5">
+              <SectionTitle title="RND-Berechnung" />
+              <div className="rounded-[1.35rem] border border-[rgba(37,99,235,0.2)] bg-[var(--color-accent-soft)] p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.18em] text-[var(--color-accent)]"><Calculator size={15} />Serverseitiges Ergebnis</div>
+                    <p className="mt-3 font-heading text-3xl font-semibold tracking-[-0.05em] text-[var(--color-ink)]">{estimate.modified_rnd === null ? 'Manuelle Prüfung' : `${estimate.modified_rnd} Jahre`}</p>
+                    <p className="mt-1 text-xs text-[var(--color-text-muted)]">{estimate.building_type_label}</p>
+                  </div>
+                  <span className="rounded-full bg-white px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">{estimate.result_status === 'calculated' ? 'Berechnet' : 'Prüfen'}</span>
+                </div>
+                <div className="mt-5 grid grid-cols-2 gap-2 text-sm">
+                  <EstimateValue label="GND" value={estimate.gnd_years === null ? '-' : `${estimate.gnd_years} J.`} />
+                  <EstimateValue label="Alter" value={`${estimate.actual_age} J.`} />
+                  <EstimateValue label="Vorläufig" value={estimate.preliminary_rnd === null ? '-' : `${estimate.preliminary_rnd} J.`} />
+                  <EstimateValue label="Punkte" value={`${estimate.modernization_points_rounded}/20`} />
+                </div>
+                <p className="mt-4 text-[0.7rem] leading-5 text-[var(--color-text-muted)]">Modell: {estimate.model_version} · Stichtag: {new Date(`${estimate.stichtag}T00:00:00`).toLocaleDateString('de-DE')}</p>
+              </div>
+              {estimate.warnings?.length ? <div className="space-y-2">{estimate.warnings.map((warning) => <div key={warning.code} className="flex items-start gap-2 rounded-[1rem] border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900"><AlertTriangle size={15} className="mt-0.5 shrink-0" />{warning.message}</div>)}</div> : null}
             </div>
           ) : null}
 
@@ -224,10 +261,11 @@ export default function RequestDetailsPanel({
                           <button
                             onClick={() => handleAnalyzeDocument(path)}
                             disabled={analyzing === path}
+                            aria-label={`${fileName} mit OpenAI analysieren`}
                             className="inline-flex items-center gap-1.5 rounded-[0.9rem] border border-[var(--color-accent-soft)] bg-[var(--color-accent-soft)] px-2.5 py-2 text-xs font-semibold text-[var(--color-accent)] transition-colors hover:brightness-105 disabled:opacity-50"
                           >
                             {analyzing === path ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                            <span className="hidden sm:inline">KI</span>
+                            <span className="hidden sm:inline">OpenAI</span>
                           </button>
                           <button
                             onClick={() => handleDownload(path)}
@@ -243,7 +281,7 @@ export default function RequestDetailsPanel({
                         <div className="mt-3 rounded-[1rem] border border-[var(--color-accent-soft)] bg-[var(--color-accent-soft)]/70 p-3 text-sm text-[var(--color-ink)]">
                           <div className="mb-2 flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.18em] text-[var(--color-accent)]">
                             <Sparkles size={12} />
-                            KI-Ergebnis
+                            OpenAI-Analyse
                           </div>
                           <div className="prose prose-sm max-w-none prose-headings:text-[var(--color-ink)] prose-p:text-[var(--color-text-muted)] prose-strong:text-[var(--color-ink)]">
                             <Markdown>{analysisResult[path]}</Markdown>
@@ -279,7 +317,12 @@ export default function RequestDetailsPanel({
 }
 
 function getSourceLabel(source?: string | null) {
+  if (source === 'rnd_estimate') return 'RND-Ersteinschätzung';
   return source === 'quick_check' ? 'Schnellcheck' : 'Anfrageformular';
+}
+
+function EstimateValue({label, value}: {label: string; value: string}) {
+  return <div className="rounded-xl bg-white/78 px-3 py-2"><p className="text-[0.62rem] font-bold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">{label}</p><p className="mt-1 font-semibold text-[var(--color-ink)]">{value}</p></div>;
 }
 function SectionTitle({title, borderless = false}: {title: string; borderless?: boolean}) {
   return (

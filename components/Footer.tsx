@@ -12,7 +12,7 @@ export default function Footer() {
         <div className="mb-16 grid grid-cols-1 gap-10 md:mb-20 md:grid-cols-12 md:gap-12">
           <div className="flex flex-col items-start md:col-span-5">
             <a href="#hero" className="group flex items-center gap-3"><span className="font-heading text-lg font-semibold uppercase tracking-tight text-[var(--color-ink)]">RND Gutachten</span></a>
-            <p className="mt-6 max-w-sm text-sm font-light leading-relaxed text-[var(--color-text-muted)]">Digitale Ersteinschätzung und strukturierte Restnutzungsdauer-Gutachten für vermietete Immobilien. Nachvollziehbar vorbereitet für Steuerberatung und Finanzamt.</p>
+            <p className="mt-6 max-w-sm text-sm font-light leading-relaxed text-[var(--color-text-muted)]">Kostenlose Ersteinschätzung und strukturierte Restnutzungsdauer-Gutachten für vermietete Immobilien. Nachvollziehbar vorbereitet für Steuerberatung und Finanzamt.</p>
           </div>
           <div className="md:col-span-3 md:col-start-7">
             <h4 className="mb-6 font-normal tracking-tight text-[var(--color-ink)]">Plattform</h4>
