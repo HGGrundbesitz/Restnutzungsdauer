@@ -1,8 +1,7 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import {Analytics} from '@vercel/analytics/next';
-import CookieNotice from '@/components/CookieNotice';
-
+import CookieNotice from "@/components/CookieNotice";
 export const metadata: Metadata = {
   title: 'Restnutzungsdauer-Gutachten | RND Gutachten',
   description:

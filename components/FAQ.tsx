@@ -45,19 +45,19 @@ const faqs = [
 
 const INITIAL_VISIBLE_COUNT = 5;
 
-export default function FAQ() {
+export default function FAQ({embedded = false}: {embedded?: boolean}) {
   const [openIndex, setOpenIndex] = useState(0);
   const [showAll, setShowAll] = useState(false);
   const visibleFaqs = useMemo(() => (showAll ? faqs : faqs.slice(0, INITIAL_VISIBLE_COUNT)), [showAll]);
 
   return (
-    <section id="faq" className="relative z-10 mx-auto max-w-[1180px] scroll-mt-32 overflow-hidden px-4 py-20 sm:px-6 md:py-28">
+    <section id="faq" className={embedded ? 'relative z-10 scroll-mt-32 overflow-hidden rounded-[2.2rem] border border-[var(--color-border)] bg-[rgba(255,255,255,0.76)] p-4 shadow-[0_36px_90px_-52px_rgba(15,23,42,0.3)] backdrop-blur-2xl sm:p-6' : 'relative z-10 mx-auto max-w-[1180px] scroll-mt-32 overflow-hidden px-4 py-20 sm:px-6 md:py-28'}>
       <div className="pointer-events-none absolute inset-x-4 top-10 -z-10 h-[420px] rounded-[3rem] bg-[radial-gradient(circle_at_50%_0%,rgba(37,99,235,0.10),transparent_62%)]" />
-      <motion.div initial={{opacity: 0, y: 22}} whileInView={{opacity: 1, y: 0}} viewport={{once: true, margin: '-100px'}} transition={{duration: 0.7, ease: [0.16, 1, 0.3, 1]}} className="mb-10 text-center">
+      <motion.div initial={{opacity: 0, y: 22}} whileInView={{opacity: 1, y: 0}} viewport={{once: true, margin: '-100px'}} transition={{duration: 0.7, ease: [0.16, 1, 0.3, 1]}} className={embedded ? 'mb-7 text-left' : 'mb-10 text-center'}>
         <div className="section-eyebrow mb-6"><span className="h-2 w-2 rounded-full bg-[var(--color-accent)] shadow-[0_0_0_6px_var(--color-accent-soft)]" />FAQ</div>
-        <h2 className="font-heading text-4xl font-semibold leading-[1.02] tracking-[-0.055em] text-[var(--color-ink)] sm:text-5xl lg:text-6xl">Sie haben Fragen? Wir haben Antworten!</h2>
+        <h2 className={`editorial-title text-4xl leading-[1.02] text-[var(--color-ink)] sm:text-5xl ${embedded ? '' : 'lg:text-6xl'}`}>Sie haben Fragen? Wir haben Antworten!</h2>
       </motion.div>
-      <div className="rounded-[2rem] border border-[var(--color-border)] bg-[rgba(255,255,255,0.74)] p-3 shadow-[var(--shadow-lift)] backdrop-blur-2xl sm:p-4 md:rounded-[2.4rem] md:p-5">
+      <div className={embedded ? 'rounded-[1.7rem] border border-[var(--color-border)] bg-white/72 p-3' : 'rounded-[2rem] border border-[var(--color-border)] bg-[rgba(255,255,255,0.74)] p-3 shadow-[var(--shadow-lift)] backdrop-blur-2xl sm:p-4 md:rounded-[2.4rem] md:p-5'}>
         <div className="mb-3 flex items-center justify-center gap-3 px-2 py-2 text-sm font-bold uppercase tracking-[0.18em] text-[var(--color-text-muted)] sm:px-3"><span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--color-accent-soft)] text-[var(--color-accent)]"><HelpCircle size={19} /></span>Antworten</div>
         <motion.div layout className="space-y-3">
           <AnimatePresence initial={false}>

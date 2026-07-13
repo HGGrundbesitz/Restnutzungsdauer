@@ -7,11 +7,12 @@ const legalLinks = [
 
 export default function Footer() {
   return (
-    <footer className="relative z-10 border-t border-[var(--color-border)] bg-[var(--color-bg)] pb-10 pt-16 sm:pt-20">
-      <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
+    <footer className="relative z-10 overflow-hidden border-t border-[var(--color-border)] bg-[linear-gradient(180deg,#ffffff,#f1f6ff)] pb-10 pt-16 sm:pt-20">
+      <div aria-hidden="true" className="absolute bottom-0 right-0 h-64 w-[38rem] bg-[url('/rnd/footer-building-lineart.svg')] bg-contain bg-bottom bg-no-repeat opacity-70" />
+      <div className="relative mx-auto max-w-[1480px] px-6 sm:px-8">
         <div className="mb-16 grid grid-cols-1 gap-10 md:mb-20 md:grid-cols-12 md:gap-12">
           <div className="flex flex-col items-start md:col-span-5">
-            <a href="#hero" className="group flex items-center gap-3"><span className="font-heading text-lg font-semibold uppercase tracking-tight text-[var(--color-ink)]">RND Gutachten</span></a>
+            <a href="#hero" className="premium-focus group flex items-center gap-3 rounded-md"><span className="font-heading text-lg font-semibold uppercase tracking-tight text-[var(--color-ink)]">RND Gutachten</span></a>
             <p className="mt-6 max-w-sm text-sm font-light leading-relaxed text-[var(--color-text-muted)]">Kostenlose Ersteinschätzung und strukturierte Restnutzungsdauer-Gutachten für vermietete Immobilien. Nachvollziehbar vorbereitet für Steuerberatung und Finanzamt.</p>
           </div>
           <div className="md:col-span-3 md:col-start-7">

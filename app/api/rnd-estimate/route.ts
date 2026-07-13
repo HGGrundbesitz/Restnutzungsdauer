@@ -7,6 +7,10 @@ import type {RndContact, RndPropertyContext} from '@/lib/rnd/types';
 import {isRndInput} from '@/lib/rnd/validate-input';
 import {consumeRateLimit, getRequestFingerprint} from '@/lib/rnd/rate-limit';
 import {getSupabaseAdminClient} from '@/lib/supabase-admin';
+import {verifyUploadCleanupToken} from '@/lib/rnd/upload-cleanup-token';
+import {isValidGermanPhone, normalizeGermanPhone} from '@/lib/rnd/phone';
+
+const PRIVACY_POLICY_VERSION = '2026-07';
 
 export async function POST(request: Request) {
   const limit = consumeRateLimit(`submit:${getRequestFingerprint(request)}`, 5, 15 * 60 * 1000);
@@ -19,7 +23,7 @@ export async function POST(request: Request) {
       input?: unknown;
       contact?: RndContact;
       property?: RndPropertyContext;
-      documentPaths?: string[];
+      documentUploads?: Array<{path?: string; cleanupToken?: string}>;
       honeypot?: string;
     };
 
@@ -36,13 +40,21 @@ export async function POST(request: Request) {
 
     const supabase = getSupabaseAdminClient();
     if (!supabase) {
-      return NextResponse.json({error: 'Die sichere Server-Verbindung zu Supabase ist noch nicht konfiguriert.'}, {status: 503});
+      return NextResponse.json({error: 'Die Anfrage kann momentan nicht gesendet werden. Bitte versuchen Sie es später erneut.'}, {status: 503});
     }
 
     const result = calculateRnd(body.input);
-    const contact = body.contact as RndContact;
+    const submittedContact = body.contact as RndContact;
+    const contact: RndContact = {
+      ...submittedContact,
+      firstName: submittedContact.firstName.trim(),
+      lastName: submittedContact.lastName.trim(),
+      email: submittedContact.email.trim().toLowerCase(),
+      phone: normalizeGermanPhone(submittedContact.phone) || undefined,
+    };
     const property = sanitizeProperty(body.property);
-    const documentPaths = sanitizeDocumentPaths(body.documentPaths);
+    const documentUploads = sanitizeDocumentUploads(body.documentUploads);
+    const documentPaths = documentUploads.map((upload) => upload.path);
     const fullName = `${contact.firstName.trim()} ${contact.lastName.trim()}`;
     const quickCheckAnswers = createAdminSummary(result, property);
 
@@ -50,19 +62,22 @@ export async function POST(request: Request) {
       .from('property_requests')
       .insert({
         name: fullName,
-        email: contact.email.trim().toLowerCase(),
-        phone: contact.phone?.trim() || null,
+        email: contact.email,
+        phone: contact.phone || null,
         address: property.address || 'Nicht angegeben',
         year: result.constructionYear,
         documents: documentPaths,
         source: 'rnd_estimate',
         quick_check_answers: quickCheckAnswers,
+        privacy_consent_at: new Date().toISOString(),
+        privacy_policy_version: PRIVACY_POLICY_VERSION,
       })
       .select('id')
       .single();
 
     if (requestError || !requestRow?.id) {
       console.error('Property request insert failed:', requestError);
+      await cleanupUploads(supabase, documentPaths);
       return NextResponse.json({error: 'Die Anfrage konnte nicht gespeichert werden.'}, {status: 500});
     }
 
@@ -91,6 +106,7 @@ export async function POST(request: Request) {
     if (estimateError) {
       console.error('RND estimate insert failed:', estimateError);
       await supabase.from('property_requests').delete().eq('id', requestRow.id);
+      await cleanupUploads(supabase, documentPaths);
       return NextResponse.json({error: 'Das Rechenprotokoll konnte nicht gespeichert werden. Bitte prüfen Sie die Datenbankmigration.'}, {status: 500});
     }
 
@@ -111,8 +127,10 @@ export async function POST(request: Request) {
 
 function validateContact(contact?: RndContact): {valid: true} | {valid: false; error: string} {
   if (!contact?.firstName?.trim() || !contact.lastName?.trim() || !contact.email?.trim()) return {valid: false, error: 'Vorname, Nachname und E-Mail-Adresse sind erforderlich.'};
+  if (contact.firstName.trim().length > 120 || contact.lastName.trim().length > 120) return {valid: false, error: 'Der eingegebene Name ist zu lang.'};
+  if (contact.email.trim().length > 320) return {valid: false, error: 'Die E-Mail-Adresse ist zu lang.'};
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email.trim())) return {valid: false, error: 'Bitte geben Sie eine gültige E-Mail-Adresse ein.'};
-  if (contact.phone && contact.phone.length > 60) return {valid: false, error: 'Die Telefonnummer ist zu lang.'};
+  if (contact.phone && !isValidGermanPhone(contact.phone)) return {valid: false, error: 'Bitte geben Sie eine gültige deutsche Telefonnummer ein.'};
   if (!contact.consent) return {valid: false, error: 'Die Datenschutzeinwilligung ist erforderlich.'};
   return {valid: true};
 }
@@ -125,9 +143,21 @@ function sanitizeProperty(property?: RndPropertyContext): RndPropertyContext {
   };
 }
 
-function sanitizeDocumentPaths(paths?: string[]) {
-  if (!Array.isArray(paths)) return [];
-  return paths.filter((path) => typeof path === 'string' && /^rnd-estimates\/[a-f0-9-]{36}\/[a-z0-9._-]+\.pdf$/i.test(path)).slice(0, 6);
+function sanitizeDocumentUploads(uploads?: Array<{path?: string; cleanupToken?: string}>) {
+  if (!Array.isArray(uploads)) return [];
+  return uploads
+    .filter((upload): upload is {path: string; cleanupToken: string} =>
+      typeof upload.path === 'string'
+      && typeof upload.cleanupToken === 'string'
+      && verifyUploadCleanupToken(upload.path, upload.cleanupToken),
+    )
+    .slice(0, 6);
+}
+
+async function cleanupUploads(supabase: NonNullable<ReturnType<typeof getSupabaseAdminClient>>, paths: string[]) {
+  if (paths.length === 0) return;
+  const {error} = await supabase.storage.from('documents').remove(paths);
+  if (error) console.error('Orphan upload cleanup failed:', error);
 }
 
 function createAdminSummary(result: ReturnType<typeof calculateRnd>, property: RndPropertyContext) {
@@ -141,7 +171,6 @@ function createAdminSummary(result: ReturnType<typeof calculateRnd>, property: R
     {label: 'Modernisierungspunkte', value: `${result.modernizationPointsRounded} / 20`},
     {label: 'Modifizierte RND', value: result.modifiedRnd === null ? 'Manuelle Prüfung' : `${result.modifiedRnd} Jahre`},
     {label: 'Ergebnisstatus', value: result.status === 'calculated' ? 'Rechnerisch ermittelt' : 'Manuelle Prüfung'},
-    {label: 'Modellversion', value: result.modelVersion},
     {label: 'Fläche', value: property.area ? `${property.area} m²` : '-'},
     {label: 'Nutzungseinheiten', value: property.units ? String(property.units) : '-'},
   ];

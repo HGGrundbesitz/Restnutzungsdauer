@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "test": "node --experimental-strip-types --test lib/rnd/calculate-rnd.test.ts lib/rnd/pdf-summary.test.ts lib/rnd/document-analysis/schema.test.ts lib/rnd/document-analysis/normalization.test.ts lib/rnd/document-analysis/conflicts.test.ts lib/rnd/document-analysis/paths.test.ts lib/rnd/map-reviewed-facts-to-input.test.ts",
     "test:rnd": "node --experimental-strip-types --test lib/rnd/calculate-rnd.test.ts lib/rnd/pdf-summary.test.ts",
     "clean": "node -e \"const fs=require('node:fs');for(const path of ['.next','tsconfig.tsbuildinfo'])fs.rmSync(path,{recursive:true,force:true});\""
   },

@@ -4,7 +4,6 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {AnimatePresence, motion} from 'motion/react';
 import Link from 'next/link';
 import {
-  ArrowUpRight,
   BarChart3,
   CheckCircle,
   ChevronLeft,
@@ -284,7 +283,7 @@ export default function AdminDashboard({session}: {session: any}) {
               Interner Bereich
             </div>
             <p className="mt-3 text-sm leading-7 text-[var(--color-text-muted)]">
-              Anfragen sichten, Dokumente prüfen und Status sauber pflegen.
+              Anfragen, Dokumente und Status im Überblick.
             </p>
           </div>
 
@@ -346,7 +345,7 @@ export default function AdminDashboard({session}: {session: any}) {
                     Anfragen verwalten
                   </h1>
                   <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-text-muted)]">
-                    Behalten Sie den Überblick über eingegangene Gutachten-Anfragen, Dokumente und aktuelle Bearbeitungsstände.
+                    Neue Anfragen prüfen, bearbeiten und abschließen.
                   </p>
                 </div>
 
@@ -396,7 +395,7 @@ export default function AdminDashboard({session}: {session: any}) {
                     className="admin-solid-btn inline-flex items-center gap-2 rounded-[1rem] px-4 py-3 text-sm font-semibold"
                   >
                     <Download size={16} />
-                    <span className="hidden sm:inline">CSV Export</span>
+                    <span className="hidden sm:inline">CSV exportieren</span>
                   </button>
                 </div>
               </div>
@@ -404,9 +403,9 @@ export default function AdminDashboard({session}: {session: any}) {
 
             <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
               <StatCard title="Gesamte Anfragen" value={stats.total} icon={<Inbox size={22} />} />
-              <StatCard title="Neu" value={stats.pending} icon={<Clock size={22} />} trend="Braucht Aufmerksamkeit" tone="amber" />
-              <StatCard title="In Bearbeitung" value={stats.reviewing} icon={<Loader2 size={22} />} trend="Aktiv in Arbeit" tone="blue" />
-              <StatCard title="Abgeschlossen" value={stats.completed} icon={<CheckCircle size={22} />} trend="Sauber bearbeitet" tone="emerald" />
+              <StatCard title="Neu" value={stats.pending} icon={<Clock size={22} />} trend="Offen" tone="amber" />
+              <StatCard title="In Bearbeitung" value={stats.reviewing} icon={<Loader2 size={22} />} trend="In Arbeit" tone="blue" />
+              <StatCard title="Abgeschlossen" value={stats.completed} icon={<CheckCircle size={22} />} trend="Erledigt" tone="emerald" />
             </div>
 
             <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -419,7 +418,7 @@ export default function AdminDashboard({session}: {session: any}) {
                     <h2 className="font-heading text-xl font-semibold tracking-[-0.04em] text-[var(--color-ink)]">
                       Anfragen der letzten 7 Tage
                     </h2>
-                    <p className="text-sm text-[var(--color-text-muted)]">Tagesansicht für neue Eingaben im System</p>
+                    <p className="text-sm text-[var(--color-text-muted)]">Neue Anfragen pro Tag</p>
                   </div>
                 </div>
 
@@ -468,7 +467,7 @@ export default function AdminDashboard({session}: {session: any}) {
                 <div className="admin-card-muted mt-6 rounded-[1.5rem] p-4">
                   <div className="text-sm font-semibold text-[var(--color-ink)]">Hinweis</div>
                   <p className="mt-2 text-sm leading-7 text-[var(--color-text-muted)]">
-                    Öffnen Sie eine Anfrage, um Status, Dokumente und Analysen im Detail zu bearbeiten.
+                    Anfrage öffnen, um Angaben und Dokumente zu prüfen.
                   </p>
                 </div>
               </div>
@@ -481,7 +480,7 @@ export default function AdminDashboard({session}: {session: any}) {
                     Aktuelle Anfragen
                   </h2>
                   <p className="text-sm text-[var(--color-text-muted)]">
-                    {filteredRequests.length} Eintraege nach Ihren aktuellen Filtern
+                    {filteredRequests.length} Einträge nach Ihren aktuellen Filtern
                   </p>
                 </div>
               </div>
@@ -546,7 +545,7 @@ export default function AdminDashboard({session}: {session: any}) {
                             <div className="max-w-[260px] truncate text-sm text-[var(--color-ink)]">{req.address}</div>
                             <div className="mt-1 flex items-center gap-1.5 text-xs text-[var(--color-text-muted)]">
                               <FileText size={12} className="text-[var(--color-text-muted)]" />
-                              {req.documents?.length || 0} Dokumente
+                              {formatDocumentCount(req.documents?.length || 0)}
                             </div>
                           </td>
                           <td className="px-6 py-4 text-sm text-[var(--color-text-muted)]">
@@ -574,7 +573,7 @@ export default function AdminDashboard({session}: {session: any}) {
                               <button
                                 onClick={(e) => deleteRequest(req.id, e)}
                                 className="rounded-[0.9rem] border border-red-200/60 bg-red-50/70 p-2 text-red-600 transition-colors hover:bg-red-100"
-                                title="Anfrage loeschen"
+                                title="Anfrage löschen"
                               >
                                 <Trash2 size={18} />
                               </button>
@@ -595,7 +594,7 @@ export default function AdminDashboard({session}: {session: any}) {
                     <span className="font-semibold text-[var(--color-ink)]">
                       {Math.min(visiblePage * itemsPerPage, filteredRequests.length)}
                     </span>{' '}
-                    von <span className="font-semibold text-[var(--color-ink)]">{filteredRequests.length}</span> Eintraegen
+                    von <span className="font-semibold text-[var(--color-ink)]">{filteredRequests.length}</span> Einträgen
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -697,7 +696,7 @@ function StatCard({
       <div className="mt-5 text-4xl font-semibold tracking-[-0.05em] text-[var(--color-ink)]">{value}</div>
       {trend && (
         <div className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${toneClasses[tone]}`}>
-          <ArrowUpRight size={12} />
+          <span className="h-1.5 w-1.5 rounded-full bg-current" />
           {trend}
         </div>
       )}
@@ -723,7 +722,12 @@ function QuickStatus({label, value, tone}: {label: string; value: number; tone: 
   );
 }
 
+function formatDocumentCount(count: number) {
+  return `${count} ${count === 1 ? 'Dokument' : 'Dokumente'}`;
+}
+
 function getSourceLabel(source?: string | null) {
+  if (source === 'rnd_estimate') return 'Ersteinschätzung';
   return source === 'quick_check' ? 'Schnellcheck' : 'Anfrageformular';
 }
 

@@ -117,12 +117,25 @@ export type RndPropertyContext = {
   address?: string;
   area?: number;
   units?: number;
+  livingArea?: number;
+  commercialArea?: number;
+  totalUsableArea?: number;
+  energyReferenceAreaAn?: number;
+  grossFloorAreaBgf?: number;
+  residentialUnits?: number;
+  commercialUnits?: number;
+  totalUnits?: number;
+};
+
+export type RndDocumentUpload = {
+  path: string;
+  cleanupToken: string;
 };
 
 export type RndEstimateSubmission = {
   input: RndInput;
   contact: RndContact;
   property: RndPropertyContext;
-  documentPaths: string[];
+  documentUploads: RndDocumentUpload[];
   honeypot?: string;
 };

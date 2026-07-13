@@ -1,4 +1,5 @@
 import {Mail, Phone, UserRound} from 'lucide-react';
+import {getGermanNationalNumber, normalizeGermanPhone} from '@/lib/rnd/phone';
 import type {RndContact} from '@/lib/rnd/types';
 
 export default function ContactStep({
@@ -25,7 +26,16 @@ export default function ContactStep({
         <ContactField label="Telefonnummer - optional" icon={Phone}>
           <div className="flex overflow-hidden rounded-xl border border-[var(--color-border)] bg-white transition focus-within:border-[var(--color-accent)] focus-within:ring-4 focus-within:ring-[var(--color-accent-soft)]">
             <span className="flex h-14 items-center border-r border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 text-sm font-semibold text-[var(--color-ink)]">+49</span>
-            <input type="tel" value={value.phone ?? ''} onChange={(event) => onChange({phone: event.target.value})} className="min-w-0 flex-1 bg-transparent px-4 text-base text-[var(--color-ink)] outline-none" autoComplete="tel" placeholder="151 23456789" />
+            <input
+              type="tel"
+              inputMode="tel"
+              value={getGermanNationalNumber(value.phone)}
+              onChange={(event) => onChange({phone: normalizeGermanPhone(event.target.value)})}
+              className="min-w-0 flex-1 bg-transparent px-4 text-base text-[var(--color-ink)] outline-none"
+              autoComplete="tel-national"
+              aria-label="Deutsche Telefonnummer ohne Ländervorwahl"
+              placeholder="151 23456789"
+            />
           </div>
         </ContactField>
         <div aria-hidden="true" className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden">

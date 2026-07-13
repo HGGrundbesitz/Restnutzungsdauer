@@ -50,7 +50,7 @@ export default function SummaryStep({
       </details>
       <div className="mx-auto mt-5 flex max-w-5xl items-start gap-3 rounded-[1.2rem] border border-[rgba(37,99,235,0.18)] bg-[var(--color-accent-soft)] px-5 py-4 text-sm leading-6 text-[var(--color-text-muted)]">
         <CheckCircle2 size={19} className="mt-0.5 shrink-0 text-[var(--color-accent)]" />
-        Das offizielle Ergebnis wird beim Absenden mit derselben Modellversion auf dem Server neu berechnet.
+        Die gespeicherte Ersteinschätzung wird beim Absenden erneut berechnet.
       </div>
     </div>
   );

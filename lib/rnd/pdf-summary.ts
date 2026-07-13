@@ -44,8 +44,6 @@ export async function createRndSummaryPdf(result: RndResult, property: RndProper
     first.drawLine({start: {x: MARGIN, y: y - 12}, end: {x: PAGE_WIDTH - MARGIN, y: y - 12}, thickness: 0.6, color: rgb(0.88, 0.9, 0.94)});
     y -= 39;
   }
-  drawText(first, `Modellversion: ${result.modelVersion}`, MARGIN, 58, 8, regular, MUTED);
-
   const second = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
   drawText(second, 'Rechenweg und Hinweise', MARGIN, PAGE_HEIGHT - 78, 26, bold, INK);
   const copy = getResultCopy(result);

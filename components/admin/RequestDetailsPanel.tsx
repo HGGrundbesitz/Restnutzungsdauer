@@ -2,14 +2,25 @@
 
 import {useState} from 'react';
 import {motion} from 'motion/react';
-import Markdown from 'react-markdown';
-import {AlertTriangle, Calculator, Calendar, Download, FileText, Loader2, Mail, MapPin, Phone, Sparkles, Trash2, User, X} from 'lucide-react';
+import {AlertTriangle, Calculator, Calendar, ChevronDown, Download, FileText, Loader2, Mail, MapPin, Phone, Sparkles, Trash2, User, X} from 'lucide-react';
 import {supabase} from '@/lib/supabase';
+import DocumentReviewPanel from '@/components/admin/DocumentReviewPanel';
 
 type QuickCheckAnswer = {
   label: string;
   value: string;
 };
+
+const HIDDEN_CALCULATION_LABELS = new Set([
+  'gnd',
+  'stichtag',
+  'gebäudealter',
+  'vorläufige rnd',
+  'modernisierungspunkte',
+  'modifizierte rnd',
+  'ergebnisstatus',
+  'modellversion',
+]);
 
 type RndEstimate = {
   id: string;
@@ -57,9 +68,13 @@ export default function RequestDetailsPanel({
   onToast,
 }: RequestDetailsPanelProps) {
   const [downloading, setDownloading] = useState<string | null>(null);
-  const [analyzing, setAnalyzing] = useState<string | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<Record<string, string>>({});
   const estimate = Array.isArray(request.rnd_estimates) ? request.rnd_estimates[0] : request.rnd_estimates;
+  const visibleFormAnswers = request.quick_check_answers?.filter(
+    (answer) => !HIDDEN_CALCULATION_LABELS.has(answer.label.trim().toLocaleLowerCase('de-DE')),
+  ) ?? [];
+  const reviewWarnings = estimate?.warnings
+    ?.filter((warning) => warning.code !== 'ROUNDING_POLICY_REQUIRES_APPROVAL')
+    .map(getReviewWarning) ?? [];
 
   const handleDownload = async (path: string) => {
     setDownloading(path);
@@ -73,49 +88,13 @@ export default function RequestDetailsPanel({
 
       if (data?.signedUrl) {
         window.open(data.signedUrl, '_blank');
-        onToast?.('Dokument wird in neuem Tab geoeffnet', 'success');
+        onToast?.('Dokument wird in einem neuen Tab geöffnet', 'success');
       }
     } catch (err) {
       console.error('Error downloading file:', err);
       onToast?.('Download fehlgeschlagen', 'error');
     } finally {
       setDownloading(null);
-    }
-  };
-
-  const handleAnalyzeDocument = async (path: string) => {
-    setAnalyzing(path);
-
-    try {
-      const {data: sessionData, error: sessionError} = await supabase.auth.getSession();
-      if (sessionError || !sessionData.session?.access_token) {
-        throw new Error('Bitte melden Sie sich erneut im Adminbereich an.');
-      }
-
-      const response = await fetch('/api/analyze-document', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${sessionData.session.access_token}`,
-        },
-        body: JSON.stringify({path}),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Fehler bei der KI-Analyse');
-      }
-
-      if (result.analysis) {
-        setAnalysisResult((prev) => ({...prev, [path]: result.analysis as string}));
-        onToast?.('KI-Analyse abgeschlossen', 'success');
-      }
-    } catch (err) {
-      console.error('Error analyzing document:', err);
-      onToast?.(err instanceof Error ? err.message : 'Fehler bei der KI-Analyse', 'error');
-    } finally {
-      setAnalyzing(null);
     }
   };
 
@@ -134,7 +113,7 @@ export default function RequestDetailsPanel({
         animate={{x: 0}}
         exit={{x: '100%'}}
         transition={{type: 'spring', damping: 25, stiffness: 210}}
-        className="fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-md flex-col border-l border-[var(--color-border)] bg-[var(--color-surface-strong)] shadow-[0_0_60px_-20px_rgba(0,0,0,0.35)] backdrop-blur-xl"
+        className="fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-xl flex-col border-l border-[var(--color-border)] bg-[var(--color-surface-strong)] shadow-[0_0_60px_-20px_rgba(0,0,0,0.35)] backdrop-blur-xl"
       >
         <div className="flex items-center justify-between border-b border-[var(--color-border)] px-6 py-5">
           <div>
@@ -187,11 +166,11 @@ export default function RequestDetailsPanel({
             </div>
           </div>
 
-          {request.quick_check_answers && request.quick_check_answers.length > 0 ? (
+          {visibleFormAnswers.length > 0 ? (
             <div className="mb-8 space-y-5">
-              <SectionTitle title="Schnellcheck" />
-              <div className="grid gap-3">
-                {request.quick_check_answers.map((answer) => (
+              <SectionTitle title="Formularangaben" />
+              <div className="grid gap-3 sm:grid-cols-2">
+                {visibleFormAnswers.map((answer) => (
                   <div key={answer.label} className="admin-card-muted rounded-[1.15rem] px-4 py-3">
                     <div className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
                       {answer.label}
@@ -205,25 +184,58 @@ export default function RequestDetailsPanel({
 
           {estimate ? (
             <div className="mb-8 space-y-5">
-              <SectionTitle title="RND-Berechnung" />
-              <div className="rounded-[1.35rem] border border-[rgba(37,99,235,0.2)] bg-[var(--color-accent-soft)] p-5">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.18em] text-[var(--color-accent)]"><Calculator size={15} />Serverseitiges Ergebnis</div>
-                    <p className="mt-3 font-heading text-3xl font-semibold tracking-[-0.05em] text-[var(--color-ink)]">{estimate.modified_rnd === null ? 'Manuelle Prüfung' : `${estimate.modified_rnd} Jahre`}</p>
-                    <p className="mt-1 text-xs text-[var(--color-text-muted)]">{estimate.building_type_label}</p>
+              <SectionTitle title="Ersteinschätzung" />
+              <div className="overflow-hidden rounded-[1.5rem] border border-[rgba(37,99,235,0.2)] bg-gradient-to-br from-[var(--color-accent-soft)] to-white shadow-[0_18px_45px_-36px_rgba(37,99,235,0.65)]">
+                <div className="p-5 sm:p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                        <Calculator size={15} />
+                        Orientierungswert
+                      </div>
+                      <p className="mt-3 font-heading text-4xl font-semibold tracking-[-0.06em] text-[var(--color-ink)]">
+                        {estimate.modified_rnd === null ? 'Prüfung nötig' : `${estimate.modified_rnd} Jahre`}
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-[var(--color-text-muted)]">{estimate.building_type_label}</p>
+                    </div>
+                    <span className="shrink-0 rounded-full border border-white/80 bg-white/90 px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-[var(--color-text-muted)] shadow-sm">
+                      {estimate.result_status === 'calculated' ? 'Vorprüfung' : 'Prüfung nötig'}
+                    </span>
                   </div>
-                  <span className="rounded-full bg-white px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">{estimate.result_status === 'calculated' ? 'Berechnet' : 'Prüfen'}</span>
+
+                  <p className="mt-5 rounded-[1rem] border border-white/80 bg-white/70 px-4 py-3 text-sm leading-6 text-[var(--color-text-muted)]">
+                    Aus den Formularangaben berechnet. Vor der weiteren Verwendung bitte fachlich prüfen.
+                  </p>
                 </div>
-                <div className="mt-5 grid grid-cols-2 gap-2 text-sm">
-                  <EstimateValue label="GND" value={estimate.gnd_years === null ? '-' : `${estimate.gnd_years} J.`} />
-                  <EstimateValue label="Alter" value={`${estimate.actual_age} J.`} />
-                  <EstimateValue label="Vorläufig" value={estimate.preliminary_rnd === null ? '-' : `${estimate.preliminary_rnd} J.`} />
-                  <EstimateValue label="Punkte" value={`${estimate.modernization_points_rounded}/20`} />
-                </div>
-                <p className="mt-4 text-[0.7rem] leading-5 text-[var(--color-text-muted)]">Modell: {estimate.model_version} · Stichtag: {new Date(`${estimate.stichtag}T00:00:00`).toLocaleDateString('de-DE')}</p>
+
+                <details className="group border-t border-[rgba(37,99,235,0.12)] bg-white/55">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-sm font-semibold text-[var(--color-ink)] sm:px-6">
+                    Berechnungsdetails
+                    <ChevronDown size={17} className="text-[var(--color-text-muted)] transition-transform duration-200 group-open:rotate-180" />
+                  </summary>
+                  <div className="border-t border-[var(--color-border)] px-5 pb-5 pt-4 sm:px-6">
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <EstimateValue label="Übliche Nutzungsdauer" value={estimate.gnd_years === null ? '–' : `${estimate.gnd_years} Jahre`} />
+                      <EstimateValue label="Gebäudealter" value={`${estimate.actual_age} Jahre`} />
+                      <EstimateValue label="Vor Anpassung" value={estimate.preliminary_rnd === null ? '–' : `${estimate.preliminary_rnd} Jahre`} />
+                      <EstimateValue label="Modernisierung" value={`${estimate.modernization_points_rounded} von 20`} />
+                    </div>
+                    <p className="mt-4 text-xs leading-5 text-[var(--color-text-muted)]">
+                      Berechnungsdatum: {new Date(`${estimate.stichtag}T00:00:00`).toLocaleDateString('de-DE')}
+                    </p>
+                  </div>
+                </details>
               </div>
-              {estimate.warnings?.length ? <div className="space-y-2">{estimate.warnings.map((warning) => <div key={warning.code} className="flex items-start gap-2 rounded-[1rem] border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900"><AlertTriangle size={15} className="mt-0.5 shrink-0" />{warning.message}</div>)}</div> : null}
+              {reviewWarnings.length > 0 ? (
+                <div className="space-y-2">
+                  {reviewWarnings.map((warning) => (
+                    <div key={warning} className="flex items-start gap-2 rounded-[1rem] border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-5 text-amber-900">
+                      <AlertTriangle size={15} className="mt-0.5 shrink-0" />
+                      {warning}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </div>
           ) : null}
 
@@ -237,7 +249,7 @@ export default function RequestDetailsPanel({
 
             {!request.documents || request.documents.length === 0 ? (
               <div className="admin-card-muted rounded-[1.25rem] p-4 text-center text-sm text-[var(--color-text-muted)]">
-                Keine Dokumente an diese Anfrage angehaengt.
+                Zu dieser Anfrage wurden keine Dokumente hochgeladen.
               </div>
             ) : (
               <div className="space-y-3">
@@ -259,40 +271,28 @@ export default function RequestDetailsPanel({
 
                         <div className="flex shrink-0 items-center gap-1.5">
                           <button
-                            onClick={() => handleAnalyzeDocument(path)}
-                            disabled={analyzing === path}
-                            aria-label={`${fileName} mit OpenAI analysieren`}
-                            className="inline-flex items-center gap-1.5 rounded-[0.9rem] border border-[var(--color-accent-soft)] bg-[var(--color-accent-soft)] px-2.5 py-2 text-xs font-semibold text-[var(--color-accent)] transition-colors hover:brightness-105 disabled:opacity-50"
-                          >
-                            {analyzing === path ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                            <span className="hidden sm:inline">OpenAI</span>
-                          </button>
-                          <button
                             onClick={() => handleDownload(path)}
                             disabled={isDownloading}
+                            aria-label={`${fileName} öffnen`}
                             className="admin-ghost-btn rounded-[0.9rem] p-2"
                           >
                             {isDownloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                           </button>
                         </div>
                       </div>
-
-                      {analysisResult[path] && (
-                        <div className="mt-3 rounded-[1rem] border border-[var(--color-accent-soft)] bg-[var(--color-accent-soft)]/70 p-3 text-sm text-[var(--color-ink)]">
-                          <div className="mb-2 flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                            <Sparkles size={12} />
-                            OpenAI-Analyse
-                          </div>
-                          <div className="prose prose-sm max-w-none prose-headings:text-[var(--color-ink)] prose-p:text-[var(--color-text-muted)] prose-strong:text-[var(--color-ink)]">
-                            <Markdown>{analysisResult[path]}</Markdown>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   );
                 })}
               </div>
             )}
+
+            <div className="mt-5 border-t border-[var(--color-border)] pt-5">
+              <DocumentReviewPanel
+                requestId={request.id}
+                documentCount={request.documents?.length ?? 0}
+                onToast={onToast}
+              />
+            </div>
           </div>
 
           <div className="border-t border-[var(--color-border)] pt-6">
@@ -306,7 +306,7 @@ export default function RequestDetailsPanel({
                 className="flex w-full items-center justify-center gap-2 rounded-[1rem] border border-red-200 bg-white px-4 py-3 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
               >
                 <Trash2 size={16} />
-                Anfrage loeschen
+                Anfrage löschen
               </button>
             </div>
           </div>
@@ -321,8 +321,20 @@ function getSourceLabel(source?: string | null) {
   return source === 'quick_check' ? 'Schnellcheck' : 'Anfrageformular';
 }
 
+function getReviewWarning(warning: RndEstimate['warnings'][number]) {
+  const messages: Record<string, string> = {
+    BUILDING_TYPE_UNKNOWN: 'Gebäudeart bitte manuell zuordnen.',
+    NON_RESIDENTIAL_MANUAL_REVIEW: 'Diese Gebäudeart bitte fachlich prüfen.',
+    CORE_RENOVATION_MANUAL_REVIEW: 'Kernsanierung bei der Prüfung berücksichtigen.',
+    MODERNIZATION_INFORMATION_INCOMPLETE: 'Mindestens eine Angabe zur Modernisierung fehlt.',
+    BUILDING_OLDER_THAN_GND: 'Das Gebäudealter liegt über dem üblichen Modellwert. Bitte manuell prüfen.',
+  };
+
+  return messages[warning.code] ?? 'Für dieses Ergebnis ist eine kurze fachliche Prüfung sinnvoll.';
+}
+
 function EstimateValue({label, value}: {label: string; value: string}) {
-  return <div className="rounded-xl bg-white/78 px-3 py-2"><p className="text-[0.62rem] font-bold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">{label}</p><p className="mt-1 font-semibold text-[var(--color-ink)]">{value}</p></div>;
+  return <div className="rounded-xl border border-white/80 bg-white/78 px-3 py-3"><p className="text-[0.62rem] font-bold uppercase leading-4 tracking-[0.12em] text-[var(--color-text-muted)]">{label}</p><p className="mt-1 font-semibold text-[var(--color-ink)]">{value}</p></div>;
 }
 function SectionTitle({title, borderless = false}: {title: string; borderless?: boolean}) {
   return (

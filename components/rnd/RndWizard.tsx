@@ -5,7 +5,8 @@ import {ArrowLeft, ArrowRight, BadgeCheck, Loader2} from 'lucide-react';
 import {useState, useTransition} from 'react';
 import {calculateRnd} from '@/lib/rnd/calculate-rnd';
 import {validateRndInput} from '@/lib/rnd/validate-input';
-import type {BuildingTypeCode, RndContact, RndInput, RndPropertyContext, RndResult} from '@/lib/rnd/types';
+import {isValidGermanPhone, normalizeGermanPhone} from '@/lib/rnd/phone';
+import type {BuildingTypeCode, RndContact, RndDocumentUpload, RndInput, RndPropertyContext, RndResult} from '@/lib/rnd/types';
 import {isSupabaseConfigured, supabase} from '@/lib/supabase';
 import BuildingDataStep from './BuildingDataStep';
 import BuildingTypeStep from './BuildingTypeStep';
@@ -24,7 +25,7 @@ const today = new Date();
 const INITIAL_INPUT: RndInput = {
   buildingTypeCode: 'unknown',
   referenceDate: `${today.getFullYear()}-01-01`,
-  constructionYear: 1978,
+  constructionYear: 0,
   modernization: {
     roof: 'unknown',
     windows: 'unknown',
@@ -50,7 +51,6 @@ export default function RndWizard() {
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState('');
   const [honeypot, setHoneypot] = useState('');
-  const [serverResult, setServerResult] = useState<RndResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -93,6 +93,10 @@ export default function RndWizard() {
         setError('Bitte geben Sie eine gültige E-Mail-Adresse ein.');
         return;
       }
+      if (!isValidGermanPhone(contact.phone)) {
+        setError('Bitte geben Sie eine gültige deutsche Telefonnummer ein.');
+        return;
+      }
       if (!contact.consent) {
         setError('Bitte bestätigen Sie die Datenschutzhinweise.');
         return;
@@ -121,26 +125,41 @@ export default function RndWizard() {
     setFiles((current) => [...current, ...valid].slice(0, MAX_DOCUMENTS));
   };
 
-  const uploadFiles = async () => {
+  const cleanupUploads = async (uploads: RndDocumentUpload[]) => {
+    if (uploads.length === 0) return;
+    await fetch('/api/rnd-estimate/upload-url', {
+      method: 'DELETE',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({uploads}),
+      keepalive: true,
+    }).catch(() => undefined);
+  };
+
+  const uploadFiles = async (): Promise<RndDocumentUpload[]> => {
     if (files.length === 0) return [];
     if (!isSupabaseConfigured) throw new Error('Der Dokumenten-Upload ist noch nicht konfiguriert.');
 
-    const paths: string[] = [];
-    for (const file of files) {
+    const uploads: RndDocumentUpload[] = [];
+    try {
+      for (const file of files) {
       const response = await fetch('/api/rnd-estimate/upload-url', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({fileName: file.name, fileSize: file.size, contentType: file.type || 'application/pdf'}),
       });
-      const upload = (await response.json()) as {path?: string; token?: string; error?: string};
-      if (!response.ok || !upload.path || !upload.token) {
+      const upload = (await response.json()) as {path?: string; token?: string; cleanupToken?: string; error?: string};
+      if (!response.ok || !upload.path || !upload.token || !upload.cleanupToken) {
         throw new Error(upload.error || `Upload für ${file.name} konnte nicht vorbereitet werden.`);
       }
       const {error: uploadError} = await supabase.storage.from('documents').uploadToSignedUrl(upload.path, upload.token, file, {contentType: 'application/pdf'});
       if (uploadError) throw new Error(`${file.name} konnte nicht hochgeladen werden.`);
-      paths.push(upload.path);
+      uploads.push({path: upload.path, cleanupToken: upload.cleanupToken});
+      }
+    } catch (uploadError) {
+      await cleanupUploads(uploads);
+      throw uploadError;
     }
-    return paths;
+    return uploads;
   };
 
   const submit = async (includeFiles = true) => {
@@ -150,18 +169,20 @@ export default function RndWizard() {
     }
     setError('');
     setIsSubmitting(true);
+    let documentUploads: RndDocumentUpload[] = [];
     try {
-        const documentPaths = includeFiles ? await uploadFiles() : [];
+        documentUploads = includeFiles ? await uploadFiles() : [];
+        const normalizedContact = {...contact, phone: normalizeGermanPhone(contact.phone)};
         const response = await fetch('/api/rnd-estimate', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({input, property, contact, documentPaths, honeypot}),
+          body: JSON.stringify({input, property, contact: normalizedContact, documentUploads, honeypot}),
         });
         const payload = (await response.json()) as {result?: RndResult; error?: string};
         if (!response.ok || !payload.result) throw new Error(payload.error || 'Die Ersteinschätzung konnte nicht übermittelt werden.');
-        setServerResult(payload.result);
         setStep('success');
     } catch (submissionError) {
+      await cleanupUploads(documentUploads);
       setError(submissionError instanceof Error ? submissionError.message : 'Die Ersteinschätzung konnte nicht übermittelt werden.');
     } finally {
       setIsSubmitting(false);
@@ -169,35 +190,42 @@ export default function RndWizard() {
   };
 
   if (step === 'success') {
-    return <SuccessState result={serverResult} onReset={() => {setStep('intro'); setInput(INITIAL_INPUT); setBuildingTypeSelected(false); setProperty({units: 1}); setContact(INITIAL_CONTACT); setFiles([]); setServerResult(null); setError('');}} />;
+    return <SuccessState onReset={() => {setStep('intro'); setInput(INITIAL_INPUT); setBuildingTypeSelected(false); setProperty({units: 1}); setContact(INITIAL_CONTACT); setFiles([]); setError('');}} />;
   }
 
   return (
-    <section id="ersteinschaetzung" className="section-shell scroll-mt-28 py-20 md:py-28">
-      <div className="mb-12 text-center">
-        <h2 className="section-title mx-auto max-w-5xl">Jetzt prüfen, ob sich ein Gutachten für Sie lohnt.</h2>
-      </div>
+    <section id="ersteinschaetzung" className={`section-shell relative scroll-mt-28 ${step === 'intro' ? 'pb-4 pt-0 md:pb-6' : 'pb-20 pt-4 md:pb-28 md:pt-8'}`}>
+      <div aria-hidden="true" className="absolute inset-x-[10%] top-20 -z-10 h-72 rounded-full bg-[rgba(111,157,255,0.13)] blur-[100px]" />
+      {step !== 'intro' ? (
+        <div className="mb-9 text-center">
+          <div className="section-eyebrow mb-6">
+            <span className="h-2 w-2 rounded-full bg-[var(--color-accent)]" />
+            Kostenlose Ersteinschätzung
+          </div>
+          <h2 className="section-title mx-auto max-w-5xl">Jetzt prüfen, ob sich ein Gutachten für Sie lohnt.</h2>
+        </div>
+      ) : null}
 
-      <div className="glass-panel overflow-hidden rounded-[1.8rem] p-4 shadow-[var(--shadow-lift)] sm:p-6 lg:p-9">
+      <div className={`architectural-card blueprint-lines overflow-hidden ${step === 'intro' ? 'rounded-[1.8rem] p-5 sm:p-6 lg:p-6' : 'rounded-[2.2rem] p-4 sm:p-6 lg:p-9'}`}>
         {step !== 'intro' ? (
           <div className="mb-7 flex items-center justify-between gap-3">
             <button type="button" onClick={goBack} className="rnd-secondary-btn px-4 py-3"><ArrowLeft size={17} />Zurück</button>
             <span className="rounded-full border border-[var(--color-border)] bg-white/75 px-4 py-2 text-xs font-bold text-[var(--color-text-muted)]">Schritt {currentIndex} / {STEP_ORDER.length - 1}</span>
           </div>
         ) : null}
-        <div className="mb-9 h-1.5 overflow-hidden rounded-full bg-[var(--color-border)]"><motion.div animate={{width: `${progress}%`}} className="h-full rounded-full bg-[var(--color-accent)]" /></div>
+        {step !== 'intro' ? <div className="mb-9 h-1.5 overflow-hidden rounded-full bg-[var(--color-border)]"><motion.div animate={{width: `${progress}%`}} className="h-full rounded-full bg-[var(--color-accent)]" /></div> : null}
 
-        <div className="min-h-[34rem] py-3 sm:py-5">
+        <div className={`${step === 'intro' ? 'min-h-0 py-0' : 'min-h-[34rem] py-3 sm:py-5'}`}>
           <AnimatePresence mode="wait">
             <motion.div key={step} initial={{opacity: 0, x: 20}} animate={{opacity: 1, x: 0}} exit={{opacity: 0, x: -20}} transition={{duration: 0.28, ease: [0.16, 1, 0.3, 1]}}>
               {step === 'intro' ? <IntroStep onStart={() => goTo('buildingType')} /> : null}
-              {step === 'buildingType' ? <BuildingTypeStep value={buildingTypeSelected ? input.buildingTypeCode : ''} onChange={(buildingTypeCode: BuildingTypeCode) => {setBuildingTypeSelected(true); setInput((current) => ({...current, buildingTypeCode}));}} /> : null}
-              {step === 'buildingData' ? <BuildingDataStep input={input} property={property} onInputChange={(patch) => setInput((current) => ({...current, ...patch}))} onPropertyChange={(patch) => setProperty((current) => ({...current, ...patch}))} /> : null}
+              {step === 'buildingType' ? <BuildingTypeStep value={buildingTypeSelected ? input.buildingTypeCode : ''} onChange={(buildingTypeCode: BuildingTypeCode) => {setError(''); setBuildingTypeSelected(true); setInput((current) => ({...current, buildingTypeCode}));}} /> : null}
+              {step === 'buildingData' ? <BuildingDataStep input={input} property={property} onInputChange={(patch) => {setError(''); setInput((current) => ({...current, ...patch}));}} onPropertyChange={(patch) => {setError(''); setProperty((current) => ({...current, ...patch}));}} /> : null}
               {step === 'preliminary' && result ? <PreliminaryResultStep result={result} /> : null}
-              {step === 'modernization' ? <ModernizationStep value={input.modernization} coreRenovation={input.coreRenovation} onChange={(modernization) => setInput((current) => ({...current, modernization}))} onCoreRenovationChange={(coreRenovation) => setInput((current) => ({...current, coreRenovation}))} /> : null}
+              {step === 'modernization' ? <ModernizationStep value={input.modernization} coreRenovation={input.coreRenovation} onChange={(modernization) => {setError(''); setInput((current) => ({...current, modernization}));}} onCoreRenovationChange={(coreRenovation) => {setError(''); setInput((current) => ({...current, coreRenovation}));}} /> : null}
               {step === 'summary' && result ? <SummaryStep input={input} property={property} result={result} /> : null}
               {step === 'result' && result ? <ResultStep result={result} input={input} property={property} onContinue={() => goTo('contact')} onEdit={() => goTo('buildingData')} onError={setError} /> : null}
-              {step === 'contact' ? <ContactStep value={contact} honeypot={honeypot} onChange={(patch) => setContact((current) => ({...current, ...patch}))} onHoneypotChange={setHoneypot} /> : null}
+              {step === 'contact' ? <ContactStep value={contact} honeypot={honeypot} onChange={(patch) => {setError(''); setContact((current) => ({...current, ...patch}));}} onHoneypotChange={setHoneypot} /> : null}
               {step === 'documents' ? <DocumentUploadStep files={files} dragActive={dragActive} onFiles={handleFiles} onRemove={(index) => setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))} onDragActiveChange={setDragActive} /> : null}
             </motion.div>
           </AnimatePresence>
@@ -224,6 +252,6 @@ function calculateSafe(input: RndInput) {
   try { return calculateRnd(input); } catch { return null; }
 }
 
-function SuccessState({result, onReset}: {result: RndResult | null; onReset: () => void}) {
-  return <section id="ersteinschaetzung" className="section-shell py-20 md:py-28"><div className="glass-panel rounded-[2rem] p-8 text-center sm:p-12"><div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[var(--color-accent-soft)] text-[var(--color-accent)]"><BadgeCheck size={36} /></div><h2 className="mt-6 font-heading text-3xl font-semibold tracking-[-0.04em] text-[var(--color-ink)] sm:text-4xl">Vielen Dank - Ihre Ersteinschätzung wurde übermittelt.</h2><p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-[var(--color-text-muted)]">Sie erhalten in Kürze eine Zusammenfassung per E-Mail. Durch die Übermittlung ist noch kein kostenpflichtiger Auftrag entstanden.</p>{result?.modifiedRnd !== null && result?.modifiedRnd !== undefined ? <p className="mt-6 font-heading text-2xl font-semibold text-[var(--color-ink)]">Serverseitig bestätigt: ca. {result.modifiedRnd} Jahre</p> : null}<button type="button" onClick={onReset} className="rnd-secondary-btn mx-auto mt-8">Neue Berechnung starten</button></div></section>;
+function SuccessState({onReset}: {onReset: () => void}) {
+  return <section id="ersteinschaetzung" className="section-shell py-20 md:py-28"><div className="glass-panel rounded-[2rem] p-8 text-center sm:p-12"><div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[var(--color-accent-soft)] text-[var(--color-accent)]"><BadgeCheck size={36} /></div><h2 className="mt-6 font-heading text-3xl font-semibold tracking-[-0.04em] text-[var(--color-ink)] sm:text-4xl">Vielen Dank – Ihre Ersteinschätzung wurde übermittelt.</h2><p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-[var(--color-text-muted)]">Sie erhalten in Kürze eine Zusammenfassung per E-Mail. Durch die Übermittlung ist noch kein kostenpflichtiger Auftrag entstanden.</p><button type="button" onClick={onReset} className="rnd-secondary-btn mx-auto mt-8">Neue Berechnung starten</button></div></section>;
 }

@@ -15,17 +15,7 @@ import {
   UploadCloud,
   type LucideIcon,
 } from 'lucide-react';
-import {motion} from 'motion/react';
-
-const coreDocuments = [
-  'Baujahr des Gebäudes',
-  'Grundrisse oder Bauzeichnungen',
-  'Wohn- und Nutzflächenberechnung',
-  'Kaufvertrag oder Kaufpreisaufteilung, falls vorhanden',
-  'Baubeschreibung, Exposé oder Angaben zur Ausstattung',
-  'Modernisierungen, Sanierungen, Anbauten oder Erweiterungen der letzten ca. 20 Jahre',
-  'Angaben zu Schäden oder Sanierungsstau',
-];
+import {motion, useReducedMotion} from 'motion/react';
 
 const helpfulDocuments = [
   'Energieausweis',
@@ -44,30 +34,24 @@ const additionalDocuments = [
   'sichtbare Schäden wie Risse, Feuchtigkeit oder veraltete Technik',
 ];
 
-const quickCards = [
-  {icon: FolderCheck, title: 'Basisdaten', tag: 'Startklar'},
-  {icon: Camera, title: 'Objektfotos', tag: 'Hilfreich'},
-  {icon: UploadCloud, title: 'Später ergänzen', tag: 'Optional'},
-];
-
 const dossierSlides = [
   {
-    image: '/foto.png',
-    label: 'Dossier',
-    title: 'Unterlagen sichten',
-    meta: 'Basisdaten reichen zum Start',
+    image: '/rnd/dossier-building-thumb.png',
+    icon: FolderCheck,
+    title: 'Basisdaten',
+    tag: 'Startklar',
   },
   {
-    image: '/bild1.png',
-    label: 'Objekt',
-    title: 'Zustand einordnen',
-    meta: 'Fotos helfen bei der Prüfung',
+    image: '/rnd/dossier-interior-thumb.png',
+    icon: Camera,
+    title: 'Objektfotos',
+    tag: 'Hilfreich',
   },
   {
     image: '/foto.png',
-    label: 'Upload',
+    icon: UploadCloud,
     title: 'Später ergänzen',
-    meta: 'Keine perfekte Akte nötig',
+    tag: 'Optional',
   },
 ];
 
@@ -75,93 +59,62 @@ export default function RequiredDocuments() {
   const [showDetails, setShowDetails] = useState(false);
 
   return (
-    <section id="unterlagen" className="section-shell scroll-mt-32 py-16 md:py-24">
-      <motion.div
-        initial={{opacity: 0, y: 22}}
-        whileInView={{opacity: 1, y: 0}}
-        viewport={{once: true, margin: '-100px'}}
-        transition={{duration: 0.8}}
-        className="mx-auto mb-10 max-w-4xl text-center"
-      >
-        <div className="section-eyebrow mb-6">
-          <span className="h-2 w-2 rounded-full bg-[var(--color-accent)]" />
-          Unterlagen
-        </div>
-        <h2 className="section-title mx-auto max-w-4xl">Kurz prüfen. Später ergänzen.</h2>
-        <p className="section-copy mx-auto mt-5 max-w-xl">
-          Für den Start reicht ein kurzer Überblick. Fehlende Unterlagen sind kein Hindernis.
-        </p>
-      </motion.div>
+    <section id="unterlagen" className="section-shell relative scroll-mt-32 py-6 md:py-10">
+      <div aria-hidden="true" className="absolute -left-32 top-20 -z-10 h-80 w-80 rounded-full bg-[rgba(87,139,255,0.11)] blur-[110px]" />
 
-      <div className="grid items-center gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-        <DocumentDossier />
+      <div className="architectural-card relative grid items-center gap-8 overflow-hidden rounded-[2.35rem] p-6 sm:p-8 lg:grid-cols-[0.62fr_1.38fr] lg:p-10 xl:gap-10 xl:p-12">
+        <div aria-hidden="true" className="architectural-grid absolute inset-0 opacity-45 [mask-image:linear-gradient(90deg,transparent,black_55%,black)]" />
 
         <motion.div
-          initial={{opacity: 0, y: 24}}
+          initial={{opacity: 0, y: 20}}
           whileInView={{opacity: 1, y: 0}}
-          viewport={{once: true, margin: '-100px'}}
-          transition={{duration: 0.75, delay: 0.08}}
-          className="glass-panel rounded-[2rem] p-5 sm:p-7 lg:p-8"
+          viewport={{once: true, margin: '-80px'}}
+          transition={{duration: 0.68}}
+          className="relative z-20"
         >
-          <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-white/70 px-3 py-1 text-[0.68rem] font-extrabold uppercase tracking-[0.22em] text-[var(--color-text-muted)]">
-                <Layers3 size={14} className="text-[var(--color-accent)]" />
-                Digitales Dossier
-              </p>
-              <h3 className="font-heading text-2xl font-semibold tracking-tight text-[var(--color-ink)] sm:text-3xl">
-                Keine Textwand. Nur ein sauberer erster Check.
-              </h3>
-            </div>
-            <div className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--color-accent-soft)] text-[var(--color-accent)] sm:flex">
-              <FolderCheck size={24} />
-            </div>
-          </div>
+          <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-white/76 px-3 py-1.5 text-[0.65rem] font-extrabold uppercase tracking-[0.2em] text-[var(--color-text-muted)]">
+            <Layers3 size={14} className="text-[var(--color-accent)]" />
+            Digitales Dossier
+          </p>
+          <h2 className="editorial-title max-w-lg text-[2.55rem] leading-[0.98] text-[var(--color-ink)] sm:text-5xl lg:text-[3.45rem]">
+            Keine Textwand. Nur ein sauberer erster Check.
+          </h2>
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            {quickCards.map((card, index) => (
-              <MiniInfoCard key={card.title} {...card} delay={index * 0.06} />
-            ))}
-          </div>
-
-          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-            <a href="#ersteinschaetzung" className="cta-btn px-6 py-4 text-sm">
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
+            <a href="#ersteinschaetzung" className="cta-btn px-6 py-3.5 text-sm">
               Ersteinschätzung starten
-              <ArrowRight size={18} className="ml-2" />
+              <ArrowRight size={17} className="ml-2" />
             </a>
             <button
               type="button"
               aria-expanded={showDetails}
               aria-controls="unterlagen-details"
               onClick={() => setShowDetails((current) => !current)}
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-white/75 px-6 py-4 text-sm font-bold text-[var(--color-ink)] shadow-[0_18px_40px_-30px_rgba(15,23,42,0.35)] transition duration-300 hover:-translate-y-0.5 hover:border-[var(--color-border-strong)] hover:bg-white"
+              className="premium-focus inline-flex items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-white/80 px-6 py-3.5 text-sm font-bold text-[var(--color-ink)] shadow-[0_18px_40px_-30px_rgba(15,23,42,0.35)] transition duration-300 hover:-translate-y-0.5 hover:border-[var(--color-border-strong)] hover:bg-white"
             >
               Mehr Infos
-              <ChevronDown size={18} className={`transition-transform duration-300 ${showDetails ? 'rotate-180' : ''}`} />
+              <ChevronDown size={17} className={`transition-transform duration-300 ${showDetails ? 'rotate-180' : ''}`} />
             </button>
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-2 text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+          <div className="mt-6 flex flex-wrap gap-2 text-[0.65rem] font-extrabold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
             <Hint icon={ShieldCheck}>Upload optional</Hint>
             <Hint icon={FileText}>Liste aufklappbar</Hint>
           </div>
         </motion.div>
+
+        <DocumentDossier />
       </div>
 
       <motion.div
         id="unterlagen-details"
         initial={false}
-        animate={{
-          height: showDetails ? 'auto' : 0,
-          opacity: showDetails ? 1 : 0,
-          marginTop: showDetails ? 24 : 0,
-        }}
-        transition={{duration: 0.45, ease: [0.16, 1, 0.3, 1]}}
+        animate={{height: showDetails ? 'auto' : 0, opacity: showDetails ? 1 : 0, marginTop: showDetails ? 20 : 0}}
+        transition={{duration: 0.42, ease: [0.16, 1, 0.3, 1]}}
         className="overflow-hidden"
       >
-        <div className="grid gap-4 rounded-[2rem] border border-[var(--color-border)] bg-white/82 p-5 shadow-[var(--shadow-soft)] backdrop-blur-xl lg:grid-cols-2 lg:p-6">
-          <DetailList title="Kernunterlagen" icon={FolderCheck} items={coreDocuments} />
-          <DetailList title="Zusätzlich hilfreich - inklusive Fotos" icon={Camera} items={additionalDocuments} />
+        <div className="mx-auto max-w-4xl rounded-[2rem] border border-[var(--color-border)] bg-white/86 p-5 shadow-[var(--shadow-soft)] backdrop-blur-xl lg:p-6">
+          <DetailList title="Zusätzlich hilfreich" icon={Camera} items={additionalDocuments} />
         </div>
       </motion.div>
     </section>
@@ -171,110 +124,99 @@ export default function RequiredDocuments() {
 function DocumentDossier() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeSlide, setActiveSlide] = useState(0);
+  const reduceMotion = useReducedMotion();
 
   const scrollToSlide = (index: number) => {
     const scroller = scrollRef.current;
-
-    if (!scroller) {
-      return;
-    }
+    if (!scroller) return;
 
     const safeIndex = (index + dossierSlides.length) % dossierSlides.length;
-    scroller.scrollTo({left: safeIndex * scroller.clientWidth, behavior: 'smooth'});
+    const slide = scroller.children.item(safeIndex) as HTMLElement | null;
+    scroller.scrollTo({left: slide?.offsetLeft ?? 0, behavior: reduceMotion ? 'auto' : 'smooth'});
     setActiveSlide(safeIndex);
   };
 
   const updateActiveSlide = (event: UIEvent<HTMLDivElement>) => {
     const scroller = event.currentTarget;
-    const nextIndex = Math.round(scroller.scrollLeft / scroller.clientWidth);
-    setActiveSlide(Math.min(Math.max(nextIndex, 0), dossierSlides.length - 1));
+    const slides = Array.from(scroller.children) as HTMLElement[];
+    const nextIndex = slides.reduce((nearest, slide, index) => {
+      const currentDistance = Math.abs(slide.offsetLeft - scroller.scrollLeft);
+      const nearestDistance = Math.abs(slides[nearest].offsetLeft - scroller.scrollLeft);
+      return currentDistance < nearestDistance ? index : nearest;
+    }, 0);
+    setActiveSlide(nextIndex);
   };
 
   return (
     <motion.article
-      initial={{opacity: 0, y: 24, rotateX: 5}}
-      whileInView={{opacity: 1, y: 0, rotateX: 0}}
-      whileHover={{y: -6, rotateX: 2, rotateY: -3}}
-      viewport={{once: true, margin: '-100px'}}
-      transition={{duration: 0.8, ease: [0.16, 1, 0.3, 1]}}
-      className="group relative mx-auto min-h-[28rem] w-full max-w-[35rem] overflow-hidden rounded-[2.2rem] border border-[var(--color-border)] bg-[linear-gradient(145deg,rgba(255,255,255,0.96),rgba(239,245,252,0.88))] p-5 shadow-[0_34px_90px_-50px_rgba(15,23,42,0.45)] backdrop-blur-2xl sm:p-7"
+      initial={{opacity: 0, y: 20}}
+      whileInView={{opacity: 1, y: 0}}
+      viewport={{once: true, margin: '-80px'}}
+      transition={{duration: 0.72, delay: 0.08}}
+      className="relative z-10 min-w-0 py-2 lg:py-0"
     >
-      <div className="absolute -left-16 top-10 h-40 w-40 rounded-full bg-[rgba(37,99,235,0.12)] blur-3xl" />
-      <div className="absolute -right-20 bottom-6 h-48 w-48 rounded-full bg-[rgba(15,23,42,0.08)] blur-3xl" />
+      <div aria-hidden="true" className="pointer-events-none absolute -bottom-20 -right-20 top-[-4rem] hidden w-[24rem] opacity-50 [mask-image:radial-gradient(ellipse_at_center,black_46%,transparent_80%)] lg:block">
+        <Image src="/rnd/folder-stack.png" alt="" fill sizes="380px" className="object-contain [filter:brightness(1.24)_contrast(0.8)_saturate(1.2)]" />
+      </div>
 
-      <div className="relative h-[24rem] sm:h-[25rem]" style={{perspective: '1100px'}}>
-        <div className="absolute left-1/2 top-12 h-[17rem] w-[70%] -translate-x-1/2 rotate-[-7deg] rounded-[1.8rem] border border-[var(--color-border)] bg-white shadow-[0_24px_70px_-42px_rgba(15,23,42,0.55)] transition duration-500 group-hover:-translate-y-2 group-hover:rotate-[-10deg]" />
-        <div className="absolute left-1/2 top-[4.25rem] h-[17rem] w-[74%] -translate-x-1/2 rotate-[5deg] rounded-[1.8rem] border border-[var(--color-border)] bg-[var(--color-surface-muted)] shadow-[0_24px_70px_-44px_rgba(15,23,42,0.48)] transition duration-500 group-hover:translate-x-[-48%] group-hover:rotate-[8deg]" />
+      <div
+        ref={scrollRef}
+        onScroll={updateActiveSlide}
+        className="relative flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4"
+      >
+        {dossierSlides.map((slide, index) => (
+          <DossierCard key={slide.title} {...slide} index={index} />
+        ))}
+      </div>
 
-        <div className="absolute left-1/2 top-5 h-[19rem] w-[80%] -translate-x-1/2 overflow-hidden rounded-[2rem] border border-[var(--color-border-strong)] bg-white shadow-[0_34px_80px_-42px_rgba(15,23,42,0.6)] transition duration-500 group-hover:-translate-y-3 group-hover:rotate-[-1.5deg]">
-          <div
-            ref={scrollRef}
-            onScroll={updateActiveSlide}
-            className="flex h-full snap-x snap-mandatory overflow-x-auto scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {dossierSlides.map((slide) => (
-              <div key={slide.title} className="relative h-full min-w-full snap-center overflow-hidden">
-                <Image src={slide.image} alt={slide.title} fill sizes="(max-width: 768px) 85vw, 430px" className="object-cover" priority={false} />
-                <div className="absolute inset-0 bg-gradient-to-t from-[rgba(15,23,42,0.76)] via-[rgba(15,23,42,0.12)] to-transparent" />
-                <div className="absolute bottom-4 left-4 right-4 pointer-events-none">
-                  <p className="mb-2 inline-flex rounded-full bg-white/88 px-3 py-1 text-[0.65rem] font-extrabold uppercase tracking-[0.2em] text-[var(--color-accent)]">
-                    {slide.label}
-                  </p>
-                  <h3 className="font-heading text-2xl font-semibold leading-none tracking-tight text-white">{slide.title}</h3>
-                  <p className="mt-2 text-sm font-semibold text-white/78">{slide.meta}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+      <div className="mt-3 flex items-center justify-center gap-2">
+        <button type="button" onClick={() => scrollToSlide(activeSlide - 1)} aria-label="Vorheriges Dokument anzeigen" className="premium-focus flex h-10 w-10 items-center justify-center rounded-full border border-[var(--color-border)] bg-white/88 text-[var(--color-ink)] shadow-[0_14px_32px_-24px_rgba(15,23,42,0.45)] transition hover:border-[rgba(37,99,235,0.22)] hover:text-[var(--color-accent)]">
+          <ArrowLeft size={17} />
+        </button>
+        <div className="flex items-center gap-1.5 px-1">
+          {dossierSlides.map((slide, index) => (
+            <button
+              key={slide.title}
+              type="button"
+              aria-label={`${slide.title} anzeigen`}
+              aria-current={activeSlide === index ? 'true' : undefined}
+              onClick={() => scrollToSlide(index)}
+              className={`h-2.5 rounded-full transition-all duration-300 ${activeSlide === index ? 'w-6 bg-[var(--color-accent)]' : 'w-2.5 bg-[rgba(15,23,42,0.16)] hover:bg-[rgba(37,99,235,0.45)]'}`}
+            />
+          ))}
         </div>
-
-        <div className="absolute left-1/2 top-[21.2rem] flex -translate-x-1/2 items-center gap-2 rounded-full border border-[var(--color-border)] bg-white/88 p-1 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.42)] backdrop-blur-xl">
-          <button type="button" onClick={() => scrollToSlide(activeSlide - 1)} aria-label="Vorheriges Dokument anzeigen" className="flex h-10 w-10 items-center justify-center rounded-full text-[var(--color-ink)] transition hover:bg-[var(--color-accent-soft)] hover:text-[var(--color-accent)]">
-            <ArrowLeft size={18} />
-          </button>
-          <div className="flex items-center gap-1.5 px-2">
-            {dossierSlides.map((slide, index) => (
-              <button
-                key={slide.title}
-                type="button"
-                aria-label={`${slide.title} anzeigen`}
-                aria-current={activeSlide === index ? 'true' : undefined}
-                onClick={() => scrollToSlide(index)}
-                className={`h-2.5 rounded-full transition-all duration-300 ${activeSlide === index ? 'w-6 bg-[var(--color-accent)]' : 'w-2.5 bg-[rgba(15,23,42,0.18)] hover:bg-[rgba(37,99,235,0.45)]'}`}
-              />
-            ))}
-          </div>
-          <button type="button" onClick={() => scrollToSlide(activeSlide + 1)} aria-label="Nächstes Dokument anzeigen" className="flex h-10 w-10 items-center justify-center rounded-full text-[var(--color-ink)] transition hover:bg-[var(--color-accent-soft)] hover:text-[var(--color-accent)]">
-            <ArrowRight size={18} />
-          </button>
-        </div>
+        <button type="button" onClick={() => scrollToSlide(activeSlide + 1)} aria-label="Nächstes Dokument anzeigen" className="premium-focus flex h-10 w-10 items-center justify-center rounded-full border border-[var(--color-border)] bg-white/88 text-[var(--color-ink)] shadow-[0_14px_32px_-24px_rgba(15,23,42,0.45)] transition hover:border-[rgba(37,99,235,0.22)] hover:text-[var(--color-accent)]">
+          <ArrowRight size={17} />
+        </button>
       </div>
     </motion.article>
   );
 }
 
-function MiniInfoCard({icon: Icon, title, tag, delay}: {icon: LucideIcon; title: string; tag: string; delay: number}) {
+function DossierCard({image, icon: Icon, title, tag, index}: {image: string; icon: LucideIcon; title: string; tag: string; index: number}) {
   return (
     <motion.div
-      initial={{opacity: 0, y: 16}}
+      initial={{opacity: 0, y: 18}}
       whileInView={{opacity: 1, y: 0}}
-      viewport={{once: true, margin: '-80px'}}
-      transition={{duration: 0.55, delay}}
-      className="theme-panel-muted rounded-[1.35rem] p-4"
+      viewport={{once: true, margin: '-60px'}}
+      transition={{duration: 0.55, delay: index * 0.06}}
+      className="group relative min-h-[15rem] min-w-[82%] snap-start overflow-hidden rounded-[1.55rem] border border-white/80 bg-white/72 shadow-[0_28px_70px_-42px_rgba(16,52,112,0.52)] backdrop-blur-xl sm:min-w-[47%] xl:min-w-[calc((100%-2rem)/3)]"
     >
-      <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--color-accent-soft)] text-[var(--color-accent)]">
-        <Icon size={21} />
+      <Image src={image} alt="" fill sizes="(max-width: 640px) 78vw, (max-width: 1280px) 36vw, 220px" className="object-cover transition duration-700 group-hover:scale-[1.035]" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(229,239,255,0.22)_45%,rgba(255,255,255,0.93)_82%)]" />
+      <div className="absolute inset-x-3 bottom-3 rounded-[1.15rem] border border-white/80 bg-white/76 p-4 shadow-[0_18px_42px_-32px_rgba(15,23,42,0.5)] backdrop-blur-xl">
+        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-accent-soft)] text-[var(--color-accent)]"><Icon size={19} /></div>
+        <h3 className="font-heading text-lg font-semibold tracking-tight text-[var(--color-ink)]">{title}</h3>
+        <p className="mt-1 text-[0.62rem] font-extrabold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">{tag}</p>
       </div>
-      <h4 className="font-heading text-lg font-semibold tracking-tight text-[var(--color-ink)]">{title}</h4>
-      <p className="mt-2 text-[0.68rem] font-extrabold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">{tag}</p>
     </motion.div>
   );
 }
 
 function Hint({children, icon: Icon}: {children: ReactNode; icon: LucideIcon}) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-white/70 px-3 py-2">
-      <Icon size={15} className="text-[var(--color-accent)]" />
+    <span className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-white/76 px-3 py-2">
+      <Icon size={14} className="text-[var(--color-accent)]" />
       {children}
     </span>
   );
@@ -284,9 +226,7 @@ function DetailList({title, icon: Icon, items}: {title: string; icon: LucideIcon
   return (
     <article className="rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-5">
       <div className="mb-4 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-[var(--color-accent)] shadow-[0_16px_34px_-28px_rgba(15,23,42,0.4)]">
-          <Icon size={19} />
-        </div>
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-[var(--color-accent)] shadow-[0_16px_34px_-28px_rgba(15,23,42,0.4)]"><Icon size={19} /></div>
         <h3 className="font-heading text-lg font-semibold tracking-tight text-[var(--color-ink)]">{title}</h3>
       </div>
       <ul className="space-y-3">

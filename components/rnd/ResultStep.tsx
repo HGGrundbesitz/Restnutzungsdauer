@@ -49,13 +49,12 @@ export default function ResultStep({
       </div>
       <div className="mt-8 grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
         <div className="flex min-h-64 flex-col items-center justify-center rounded-[1.8rem] border border-[rgba(37,99,235,0.2)] bg-[linear-gradient(160deg,#ffffff,var(--color-accent-soft))] p-7 text-center shadow-[0_28px_70px_-48px_rgba(37,99,235,0.55)]">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">Wirtschaftliche Restnutzungsdauer</p>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">Rechnerische, vorläufige Restnutzungsdauer</p>
           {result.modifiedRnd === null ? (
             <p className="mt-6 font-heading text-3xl font-semibold text-[var(--color-ink)]">Manuelle Prüfung</p>
           ) : (
             <p className="mt-5 font-heading text-7xl font-semibold tracking-[-0.07em] text-[var(--color-ink)]">{result.modifiedRnd}<span className="ml-2 text-2xl font-medium text-[var(--color-text-muted)]">Jahre</span></p>
           )}
-          <p className="mt-5 text-sm text-[var(--color-text-muted)]">Modell: {result.modelVersion}</p>
         </div>
         <div className="rounded-[1.8rem] border border-[var(--color-border)] bg-white/84 p-6 sm:p-8">
           <p className="text-base leading-8 text-[var(--color-text-muted)]">{copy.body}</p>

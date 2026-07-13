@@ -1,6 +1,7 @@
 import {NextResponse} from 'next/server';
 import {getSupabaseAdminClient} from '@/lib/supabase-admin';
 import {consumeRateLimit, getRequestFingerprint} from '@/lib/rnd/rate-limit';
+import {createUploadCleanupToken, verifyUploadCleanupToken} from '@/lib/rnd/upload-cleanup-token';
 
 const MAX_SIZE = 15 * 1024 * 1024;
 
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
 
     const supabase = getSupabaseAdminClient();
     if (!supabase) {
-      return NextResponse.json({error: 'Der sichere Dokumenten-Upload ist serverseitig noch nicht konfiguriert.'}, {status: 503});
+      return NextResponse.json({error: 'Der Dokumenten-Upload ist momentan nicht verfügbar. Sie können ohne Dokumente fortfahren.'}, {status: 503});
     }
 
     const path = `rnd-estimates/${crypto.randomUUID()}/${fileName}`;
@@ -32,10 +33,61 @@ export async function POST(request: Request) {
       console.error('Signed upload URL creation failed:', error);
       return NextResponse.json({error: 'Der Upload konnte nicht vorbereitet werden.'}, {status: 500});
     }
-    return NextResponse.json({path, token: data.token}, {headers: {'Cache-Control': 'no-store'}});
+    return NextResponse.json(
+      {path, token: data.token, cleanupToken: createUploadCleanupToken(path)},
+      {headers: {'Cache-Control': 'no-store'}},
+    );
   } catch (error) {
     console.error('Upload URL request failed:', error);
     return NextResponse.json({error: 'Der Upload konnte nicht vorbereitet werden.'}, {status: 500});
+  }
+}
+
+export async function DELETE(request: Request) {
+  const limit = consumeRateLimit(`upload-cleanup:${getRequestFingerprint(request)}`, 30, 10 * 60 * 1000);
+  if (!limit.allowed) return NextResponse.json({error: 'Zu viele Anfragen.'}, {status: 429});
+
+  try {
+    const body = (await request.json()) as {uploads?: Array<{path?: string; cleanupToken?: string}>};
+    const paths = (body.uploads ?? [])
+      .slice(0, 6)
+      .filter((upload): upload is {path: string; cleanupToken: string} =>
+        typeof upload.path === 'string'
+        && typeof upload.cleanupToken === 'string'
+        && verifyUploadCleanupToken(upload.path, upload.cleanupToken),
+      )
+      .map((upload) => upload.path);
+
+    if (paths.length === 0) return NextResponse.json({success: true});
+    const supabase = getSupabaseAdminClient();
+    if (!supabase) return NextResponse.json({error: 'Cleanup ist momentan nicht verfügbar.'}, {status: 503});
+
+    const referenceChecks = await Promise.all(
+      paths.map(async (path) => {
+        const {data, error} = await supabase
+          .from('property_requests')
+          .select('id')
+          .contains('documents', [path])
+          .limit(1);
+        return {path, referenced: Boolean(data?.length), error};
+      }),
+    );
+    if (referenceChecks.some((check) => check.error)) {
+      console.error('Uploaded document reference check failed:', referenceChecks.filter((check) => check.error));
+      return NextResponse.json({error: 'Dateien konnten nicht sicher geprüft werden.'}, {status: 500});
+    }
+    const removablePaths = referenceChecks.filter((check) => !check.referenced).map((check) => check.path);
+    if (removablePaths.length === 0) return NextResponse.json({success: true});
+
+    const {error} = await supabase.storage.from('documents').remove(removablePaths);
+    if (error) {
+      console.error('Uploaded document cleanup failed:', error);
+      return NextResponse.json({error: 'Dateien konnten nicht entfernt werden.'}, {status: 500});
+    }
+    return NextResponse.json({success: true});
+  } catch (error) {
+    console.error('Upload cleanup request failed:', error);
+    return NextResponse.json({error: 'Dateien konnten nicht entfernt werden.'}, {status: 500});
   }
 }
 

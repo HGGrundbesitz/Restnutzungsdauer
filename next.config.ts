@@ -1,7 +1,16 @@
 import type {NextConfig} from 'next';
 
+const publicSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
+const publicSupabaseKey =
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY;
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Only URL and publishable key are exposed. SUPABASE_SECRET_KEY stays server-only.
+  env: {
+    NEXT_PUBLIC_SUPABASE_URL: publicSupabaseUrl,
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: publicSupabaseKey,
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },

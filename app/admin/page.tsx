@@ -1,11 +1,11 @@
-﻿'use client';
+'use client';
 
 import {useEffect, useState} from 'react';
 import type {Session} from '@supabase/supabase-js';
 import {Loader2} from 'lucide-react';
 import AdminLogin from '@/components/admin/AdminLogin';
 import AdminDashboard from '@/components/admin/AdminDashboard';
-import {supabase} from '@/lib/supabase';
+import {isSupabaseConfigured, supabase} from '@/lib/supabase';
 
 export default function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
@@ -14,11 +14,61 @@ export default function AdminPage() {
 
   useEffect(() => {
     let isMounted = true;
+    let verificationId = 0;
+
+    const verifyAdminSession = async (candidate: Session | null) => {
+      const currentVerification = ++verificationId;
+
+      if (!candidate) {
+        if (isMounted && currentVerification === verificationId) {
+          setSession(null);
+          setLoading(false);
+        }
+        return;
+      }
+
+      const {data: membership, error: membershipError} = await supabase
+        .from('admin_users')
+        .select('user_id')
+        .eq('user_id', candidate.user.id)
+        .eq('active', true)
+        .maybeSingle();
+
+      if (!isMounted || currentVerification !== verificationId) {
+        return;
+      }
+
+      if (membershipError) {
+        console.error('Admin membership verification failed:', membershipError);
+        setSession(null);
+        setSessionError('Die Admin-Berechtigung konnte nicht geprüft werden. Bitte führen Sie zuerst das Supabase-SQL-Setup aus.');
+        setLoading(false);
+        return;
+      }
+
+      if (!membership) {
+        setSession(null);
+        setSessionError('Dieses Konto ist nicht als Administrator freigeschaltet.');
+        setLoading(false);
+        await supabase.auth.signOut({scope: 'local'});
+        return;
+      }
+
+      setSession(candidate);
+      setSessionError(null);
+      setLoading(false);
+    };
 
     const loadSession = async () => {
+      if (!isSupabaseConfigured) {
+        setSessionError('Supabase ist nicht vollständig konfiguriert. Prüfen Sie URL und Publishable Key in der .env.local.');
+        setLoading(false);
+        return;
+      }
+
       try {
         const {
-          data: {session},
+          data: {session: currentSession},
           error,
         } = await supabase.auth.getSession();
 
@@ -26,46 +76,32 @@ export default function AdminPage() {
           throw error;
         }
 
-        if (!isMounted) {
-          return;
-        }
-
-        setSession(session);
-        setSessionError(null);
+        await verifyAdminSession(currentSession);
       } catch (error) {
         console.error('Failed to initialize admin session:', error);
-
-        if (!isMounted) {
-          return;
-        }
-
-        setSession(null);
-        setSessionError(
-          'Supabase konnte nicht erreicht werden. Bitte prüfen Sie die NEXT_PUBLIC_SUPABASE_URL in Ihrer .env.local und starten Sie den Dev-Server neu.'
-        );
-      } finally {
         if (isMounted) {
+          setSession(null);
+          setSessionError('Supabase konnte nicht erreicht werden. Prüfen Sie SUPABASE_URL und starten Sie den Dev-Server neu.');
           setLoading(false);
         }
       }
     };
 
-    loadSession();
+    void loadSession();
 
     const {
       data: {subscription},
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      if (!isMounted) {
-        return;
-      }
-
-      setSession(nextSession);
-      setSessionError(null);
-      setLoading(false);
+      window.setTimeout(() => {
+        if (isMounted) {
+          void verifyAdminSession(nextSession);
+        }
+      }, 0);
     });
 
     return () => {
       isMounted = false;
+      verificationId += 1;
       subscription.unsubscribe();
     };
   }, []);

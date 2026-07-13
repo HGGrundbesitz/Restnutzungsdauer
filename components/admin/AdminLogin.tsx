@@ -28,7 +28,7 @@ export default function AdminLogin({externalError = null}: AdminLoginProps) {
     setSuccess(null);
 
     if (!isSupabaseConfigured) {
-      setError('Supabase ist lokal nicht konfiguriert. Bitte legen Sie eine gültige .env.local mit URL und Anon Key an und starten Sie den Dev-Server neu.');
+      setError('Supabase ist lokal nicht konfiguriert. Bitte prüfen Sie URL und Publishable Key in der .env.local und starten Sie den Dev-Server neu.');
       setLoading(false);
       return;
     }
@@ -58,7 +58,7 @@ export default function AdminLogin({externalError = null}: AdminLoginProps) {
     setSuccess(null);
 
     if (!isSupabaseConfigured) {
-      setError('Supabase ist lokal nicht konfiguriert. Bitte legen Sie eine gültige .env.local mit URL und Anon Key an und starten Sie den Dev-Server neu.');
+      setError('Supabase ist lokal nicht konfiguriert. Bitte prüfen Sie URL und Publishable Key in der .env.local und starten Sie den Dev-Server neu.');
       setLoading(false);
       return;
     }

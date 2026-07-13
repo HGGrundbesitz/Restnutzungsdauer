@@ -12,8 +12,12 @@ export default function BuildingDataStep({
   onInputChange: (patch: Partial<RndInput>) => void;
   onPropertyChange: (patch: Partial<RndPropertyContext>) => void;
 }) {
-  const referenceYear = input.referenceDate ? new Date(`${input.referenceDate}T00:00:00`).getFullYear() : new Date().getFullYear();
-  const age = Math.max(0, referenceYear - input.constructionYear);
+  const parsedReferenceYear = input.referenceDate ? new Date(`${input.referenceDate}T00:00:00`).getFullYear() : NaN;
+  const referenceYear = Number.isInteger(parsedReferenceYear) ? parsedReferenceYear : new Date().getFullYear();
+  const hasValidConstructionYear = Number.isInteger(input.constructionYear)
+    && input.constructionYear >= 1500
+    && input.constructionYear <= referenceYear;
+  const age = hasValidConstructionYear ? referenceYear - input.constructionYear : null;
 
   return (
     <div>
@@ -38,8 +42,9 @@ export default function BuildingDataStep({
             type="number"
             min={1500}
             max={referenceYear}
-            value={input.constructionYear}
-            onChange={(event) => onInputChange({constructionYear: Number(event.target.value)})}
+            required
+            value={input.constructionYear || ''}
+            onChange={(event) => onInputChange({constructionYear: event.target.value === '' ? 0 : Number(event.target.value)})}
             className="rnd-input"
           />
         </Field>
@@ -83,7 +88,9 @@ export default function BuildingDataStep({
 
       <div className="mx-auto mt-5 flex max-w-4xl items-center justify-between rounded-[1.25rem] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-5 py-4">
         <span className="text-sm font-semibold text-[var(--color-text-muted)]">Rechnerisches Gebäudealter</span>
-        <strong className="font-heading text-2xl text-[var(--color-ink)]">{age} Jahre</strong>
+        <strong className="font-heading text-xl text-[var(--color-ink)] sm:text-2xl">
+          {age === null ? 'Bitte Baujahr eingeben' : `${age} Jahre`}
+        </strong>
       </div>
     </div>
   );
