@@ -49,7 +49,7 @@ const DIRECTLY_MAPPABLE_FIELDS = new Set<DocumentFieldKey>([
   'commercial_area',
   'total_usable_area',
   'energy_reference_area_an',
-  'gross_floor_area_bgf',
+  'gross_floor_area',
   'usable_area',
   'number_of_units',
   'residential_units',
@@ -163,7 +163,7 @@ export function mapReviewedFactsToInput({
   if (livingArea && typeof livingArea.value === 'number') property.livingArea = livingArea.value;
   if (commercialArea && typeof commercialArea.value === 'number') property.commercialArea = commercialArea.value;
   applyContextNumber('energy_reference_area_an', 'energyReferenceAreaAn');
-  applyContextNumber('gross_floor_area_bgf', 'grossFloorAreaBgf');
+  applyContextNumber('gross_floor_area', 'grossFloorAreaBgf');
 
   applyContextNumber('residential_units', 'residentialUnits');
   applyContextNumber('commercial_units', 'commercialUnits');
