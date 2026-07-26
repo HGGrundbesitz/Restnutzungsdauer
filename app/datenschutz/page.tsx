@@ -1,4 +1,13 @@
+import type {Metadata} from 'next';
 import LegalPage from '@/components/LegalPage';
+import {buildPageMetadata} from '@/lib/seo/site';
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Datenschutzhinweise',
+  description: 'Datenschutzhinweise zur digitalen Ersteinschätzung, Kontaktaufnahme und optionalen Dokumentenübermittlung.',
+  path: '/datenschutz',
+  noIndex: true,
+});
 
 export default function DatenschutzPage() {
   return (

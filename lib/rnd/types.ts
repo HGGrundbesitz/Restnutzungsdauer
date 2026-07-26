@@ -19,6 +19,8 @@ export type BuildingTypeCode =
   | 'agricultural'
   | 'unknown';
 
+export type OfficialBuildingTypeCode = Exclude<BuildingTypeCode, 'unknown'>;
+
 export type ModernizationPeriod =
   | 'within_5'
   | 'within_10'
@@ -40,13 +42,39 @@ export type ModernizationAnswers = {
   floorplan: FloorplanImprovement;
 };
 
-export type RndInput = {
+export type RndInputV1 = {
+  schemaVersion?: undefined;
   buildingTypeCode: BuildingTypeCode;
   referenceDate: string;
   constructionYear: number;
   modernization: ModernizationAnswers;
   coreRenovation: boolean;
 };
+
+export const RND_INPUT_V2_SCHEMA_VERSION = 'rnd-clickflow-v2' as const;
+
+export type RndAnswerIndex = 0 | 1 | 2;
+
+export type ModernizationAnswersV2 = {
+  roof: RndAnswerIndex;
+  windows: RndAnswerIndex;
+  pipes: RndAnswerIndex;
+  heating: RndAnswerIndex;
+  exteriorWalls: RndAnswerIndex;
+  bathrooms: RndAnswerIndex;
+  interior: RndAnswerIndex;
+  floorplan: RndAnswerIndex;
+};
+
+export type RndInputV2 = {
+  schemaVersion: typeof RND_INPUT_V2_SCHEMA_VERSION;
+  buildingTypeCode: OfficialBuildingTypeCode;
+  referenceDate: string;
+  constructionYear: number;
+  modernization: ModernizationAnswersV2;
+};
+
+export type RndInput = RndInputV1 | RndInputV2;
 
 export type RndWarningCode =
   | 'BUILDING_TYPE_UNKNOWN'

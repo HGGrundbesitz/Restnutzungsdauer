@@ -170,9 +170,55 @@ export type DocumentAnalysisRunRecord = {
   updated_at: string;
 };
 
+export type DocumentFactAuditRecord = {
+  id: string;
+  request_id: string;
+  fact_id: string | null;
+  action: 'accepted' | 'edited' | 'rejected';
+  previous_status: string | null;
+  previous_value: NormalizedFactValue;
+  new_status: string;
+  new_value: NormalizedFactValue;
+  admin_user_id: string | null;
+  created_at: string;
+  fact?: {
+    field_key: DocumentFieldKey;
+    file_name: string;
+    page_number: number;
+  } | null;
+};
+
+export type RndCalculationSnapshotRecord = {
+  id: string;
+  request_id: string;
+  source_fact_ids: string[];
+  result_snapshot: {
+    modifiedRnd?: number | null;
+    modelVersion?: string;
+    [key: string]: unknown;
+  };
+  calculator_model_version: string;
+  warnings: string[];
+  approved_by: string | null;
+  created_at: string;
+};
+
+export type RequestStatusAuditRecord = {
+  id: string;
+  request_id: string;
+  previous_status: 'pending' | 'reviewing' | 'completed' | null;
+  new_status: 'pending' | 'reviewing' | 'completed';
+  admin_user_id: string | null;
+  created_at: string;
+};
+
 export type ReviewBundle = {
   runs: DocumentAnalysisRunRecord[];
   facts: DocumentFactRecord[];
   conflicts: DocumentConflictRecord[];
+  factAudits: DocumentFactAuditRecord[];
+  calculationSnapshots: RndCalculationSnapshotRecord[];
+  statusEvents: RequestStatusAuditRecord[];
+  reviewerLabels: Record<string, string>;
   signedDocumentUrls: Record<string, string>;
 };

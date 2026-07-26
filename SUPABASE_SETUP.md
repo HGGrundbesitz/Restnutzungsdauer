@@ -1,6 +1,13 @@
-# Supabase-Neuprojekt für RND Gutachten
+# Supabase-Setup für RND Gutachten
 
-Diese Anleitung richtet das neue Supabase-Projekt für QuickCheck, Admin-Dashboard, Auth, private PDF-Dateien und die OpenAI-Dokumentanalyse ein.
+Diese Anleitung beschreibt den kanonischen Repository-Stand für ein neues
+Supabase-Projekt. `supabase/migrations/supabasefiles.sql` ist nur ein Vergleich
+mit dem aktuellen Live-Stand und keine Migration, die von oben bis unten
+ausgeführt werden darf.
+
+Bestehende Production-Projekte werden nicht mit `supabase-schema.sql` neu
+aufgebaut. Dort müssen die einzelnen Änderungen zuerst gegen den Live-Stand
+geprüft, separat freigegeben und anschließend kontrolliert ausgeführt werden.
 
 ## 1. Umgebungsvariablen
 
@@ -10,7 +17,6 @@ In `.env.local` eintragen. Werte niemals in Git committen oder in Chats posten.
 SUPABASE_URL=https://DEIN-PROJECT-REF.supabase.co
 SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 SUPABASE_SECRET_KEY=sb_secret_...
-SUPABASE_JWKS_URL=https://DEIN-PROJECT-REF.supabase.co/auth/v1/.well-known/jwks.json
 
 OPENAI_API_KEY=sk-...
 OPENAI_MODEL=gpt-5.4-mini
@@ -21,132 +27,105 @@ RESEND_FROM_NAME=RND Gutachten
 CONTACT_EMAIL=team@deine-domain.de
 ```
 
-`SUPABASE_PUBLISHABLE_KEY` darf im Browser verwendet werden. `SUPABASE_SECRET_KEY`, `OPENAI_API_KEY` und `RESEND_API_KEY` sind ausschließlich serverseitig. `SUPABASE_JWKS_URL` wird von der aktuellen App nicht direkt benötigt; Supabase validiert Admin-Tokens selbst. Sie kann für spätere direkte JWT-Prüfungen stehen bleiben.
+`SUPABASE_PUBLISHABLE_KEY` darf im Browser verwendet werden. Alle anderen
+Schlüssel sind ausschließlich serverseitig. Nach Änderungen den Dev-Server
+vollständig neu starten.
 
-Nach jeder Änderung an `.env.local` den Dev-Server komplett neu starten.
+## 2. Kanonische Reihenfolge für ein leeres Projekt
 
-## 2. Tabellen, RLS und Storage anlegen
+Die Dateien im Supabase SQL Editor genau in dieser Reihenfolge ausführen:
 
-1. Im Supabase Dashboard das neue Projekt öffnen.
-2. `SQL Editor` öffnen.
-3. Den gesamten Inhalt von `supabase-schema.sql` einfügen.
-4. `Run` ausführen.
-5. Danach den gesamten Inhalt von `supabase/migrations/20260712180000_document_review_workflow.sql` einfügen.
-6. Erneut `Run` ausführen.
+1. `supabase-schema.sql` – Basisschema, RLS und privater Storage-Bucket.
+2. `supabase/migrations/20260712180000_document_review_workflow.sql` –
+   Dokumentanalyse, Fakten, Konflikte, Audit Log und Snapshots.
+3. `supabase/migrations/20260713120000_harden_document_review_history.sql` –
+   Current-Run-Historie, atomare Review-Funktion und unveränderliche
+   Audit-/Snapshot-Datensätze.
+4. `supabase/migrations/20260725150000_add_document_fact_metadata.sql` –
+   strukturiertes `fact_metadata` auf `public.document_facts`.
+5. `supabase/migrations/20260726120000_request_status_audit.sql` –
+   unveränderliche Statushistorie und atomare, ausschließlich serverseitige
+   Statuswechsel.
+6. `supabase/add-admin.sql` – separat und nur nach dem Anlegen des jeweiligen
+   Auth-Benutzers.
+7. `supabase/verify-setup.sql` – ausschließlich lesende Abschlussprüfung.
 
-Das Script erstellt:
+Die Admin-Datei ist absichtlich kein allgemeiner Bootstrap: E-Mail und
+Auth-User-ID unterscheiden sich je Umgebung.
 
-- `property_requests` für Anfragen
-- `rnd_estimates` für das serverseitige Rechenprotokoll
-- `admin_users` als explizite Admin-Freigabeliste
-- `document_analysis_runs` für versionierte Dokumentprüfungen
-- `document_facts` für belegte Angaben mit PDF-Seite und Textstelle
-- `document_conflicts` für deterministisch erkannte Widersprüche
-- `document_fact_audit_log` für Prüfentscheidungen
-- `rnd_calculation_snapshots` für freigegebene Neuberechnungen
-- `report_drafts` als vorbereitete, noch nicht aktive Basis für spätere Berichtsentwürfe
-- den privaten Storage-Bucket `documents`
-- Indizes, Constraints und RLS-Policies
+## 3. Erster Admin und Supabase Auth
 
-Es gibt absichtlich keine öffentliche Insert-Policy. Das Formular speichert über die abgesicherte Next.js-Serverroute mit dem Secret Key. Im Browser sind Kundendaten nicht öffentlich lesbar.
+Unter `Authentication -> Users` einen Benutzer mit starkem Passwort anlegen und
+die E-Mail bestätigen. Danach in `supabase/add-admin.sql`
+`ADMIN_EMAIL_HIER_EINTRAGEN` ersetzen und die Datei ausführen.
 
-## 3. Supabase Auth konfigurieren
+Empfohlene Auth-Einstellungen:
 
-Unter `Authentication`:
+- öffentliche Registrierungen deaktivieren;
+- anonyme Logins deaktiviert lassen;
+- Passwortlänge mindestens 10, besser 12 Zeichen;
+- für Produktion einen eigenen SMTP-Dienst konfigurieren;
+- lokale Site URL `http://localhost:3000`;
+- lokaler Redirect `http://localhost:3000/admin/reset-password`;
+- Produktionsdomain und Reset-URL zusätzlich freigeben.
 
-1. E-Mail/Passwort aktivieren.
-2. Öffentliche Registrierungen deaktivieren. Admin-Konten werden nur manuell angelegt.
-3. Mindestlänge für Passwörter auf mindestens 10, besser 12 Zeichen setzen.
-4. Anonyme Logins deaktiviert lassen.
-5. JWT-Laufzeit kurz halten; 3600 Sekunden ist für dieses Dashboard passend.
-6. Für Produktion einen eigenen SMTP-Dienst konfigurieren, damit Passwort-Reset-E-Mails zuverlässig ankommen.
+Ein Auth-Benutzer erhält nur dann Dashboard-Zugriff, wenn er zusätzlich als
+aktiver Admin in `public.admin_users` eingetragen ist.
 
-URL-Konfiguration während der lokalen Entwicklung:
+## 4. Sicherheitsmodell
 
-```text
-Site URL: http://localhost:3000
-Redirect URL: http://localhost:3000/admin/reset-password
-```
+- Das öffentliche Formular schreibt nur über die abgesicherte Next.js-Route.
+- Kundendaten und PDFs sind für `anon` nicht lesbar.
+- Der Bucket `documents` bleibt privat und akzeptiert nur PDF-Dateien bis 15 MB.
+- Die Dokumentanalyse berechnet keine RND und übernimmt keinen Wert automatisch.
+- Nur akzeptierte oder manuell bearbeitete Fakten dürfen eine neue,
+  deterministische Berechnung und einen unveränderlichen Snapshot erzeugen.
+- Statuswechsel laufen ausschließlich über die geschützte Admin-API. Die
+  zugrunde liegende RPC aktualisiert Anfrage und Audit-Eintrag atomar.
+- Audit-Einträge und Berechnungssnapshots dürfen nicht aktualisiert, aber im Rahmen
+  einer vollständigen Löschung der Kundenanfrage weiterhin kaskadierend
+  entfernt werden.
 
-Nach dem Domain-Launch zusätzlich eintragen:
+## 5. Verifikation
 
-```text
-https://DEINE-DOMAIN.DE
-https://DEINE-DOMAIN.DE/admin/reset-password
-```
+`supabase/verify-setup.sql` prüft lesend:
 
-## 4. Ersten Admin anlegen
+- alle Kern- und Workflow-Tabellen mit RLS;
+- Admin- und Storage-Policies;
+- `document_facts.fact_metadata`;
+- `document_analysis_runs.is_current` und die partielle Unique-Constraint;
+- Review-, Completion- und Immutable-Funktionen/Trigger;
+- die servereigene Status-RPC sowie Tabelle, Policy und Immutable-Trigger der
+  Statushistorie;
+- doppelte Current Runs;
+- privaten `documents`-Bucket;
+- konfigurierte Admins.
 
-1. `Authentication -> Users -> Add user` öffnen.
-2. E-Mail und starkes Passwort anlegen; E-Mail bestätigen.
-3. `supabase/add-admin.sql` öffnen.
-4. `ADMIN_EMAIL_HIER_EINTRAGEN` durch genau diese E-Mail ersetzen.
-5. Script im SQL Editor ausführen.
-
-Nur ein Auth-Benutzer mit aktivem Eintrag in `admin_users` darf Anfragen und Dokumente sehen. Ein normal eingeloggter Benutzer erhält keinen Dashboard-Zugriff.
-
-Weitere Admins werden genauso angelegt. Zum Sperren eines Admins:
-
-```sql
-update public.admin_users
-set active = false
-where email = lower('admin@beispiel.de');
-```
-
-## 5. E-Mail und Passwort-Reset
-
-Die App verwendet Resend für QuickCheck-Bestätigungen. Der Supabase-Passwort-Reset benötigt zusätzlich eine SMTP-Konfiguration im Supabase-Dashboard. Für Produktion muss `RESEND_FROM_EMAIL` zu einer bei Resend verifizierten Domain gehören; `onboarding@resend.dev` ist nur zum Testen geeignet.
-
-## 6. OpenAI-Dokumentanalyse
-
-Die Analyse und fachliche Prüfung laufen über geschützte Admin-Routen:
-
-- nur ein gültig eingeloggter und freigeschalteter Admin darf sie aufrufen
-- PDFs kommen aus dem privaten Supabase-Bucket
-- maximal 15 MB, PDF-Signatur und erlaubter Pfad werden geprüft
-- Dokumentinhalt wird als nicht vertrauenswürdig behandelt
-- `store: false` verhindert das Speichern der Antwort über die API-Anfrage
-- die KI berechnet keine Restnutzungsdauer und gibt keine Steuer- oder Rechtsentscheidung ab
-- erkannte Angaben werden mit Datei, Seite und Textbeleg gespeichert
-- kein erkannter Wert wird automatisch übernommen
-- nur übernommene oder bearbeitete Werte können in eine neue deterministische Berechnung einfließen
-- widersprüchliche Werte werden nicht stillschweigend ausgewählt
-
-Für die OpenAI API muss im OpenAI Platform-Konto Billing/Guthaben aktiv sein. Der ChatGPT-Plan allein enthält kein API-Guthaben.
-
-## 7. Setup kontrollieren
-
-Den Inhalt von `supabase/verify-setup.sql` im SQL Editor ausführen. Erwartet werden:
-
-- alle Kern- und Prüf-Tabellen mit `rowsecurity = true`
-- Admin-Policies für Tabellen und Storage
-- Bucket `documents` mit `public = false`
-- mindestens ein aktiver Admin
+Die Abfrage für doppelte Current Runs muss keine Zeile liefern.
 
 Danach lokal:
 
 ```powershell
-npm run dev
+npm.cmd run dev
 ```
 
-Diese Abläufe testen:
+Folgende Abläufe manuell testen:
 
-1. `/admin` Login
-2. Passwort-Reset per E-Mail
-3. QuickCheck ohne PDF absenden
-4. QuickCheck mit PDF absenden
-5. Anfrage und PDF im Dashboard öffnen
-6. Status ändern und Seite neu laden
-7. Dokumentprüfung eines Test-PDFs starten
-8. Eine Angabe übernehmen, bearbeiten und ablehnen
-9. Einen Test-Widerspruch prüfen und die Rechenvorschau öffnen
-10. Testanfrage wieder löschen und prüfen, dass Fakten und Prüfstände mit gelöscht wurden
+1. `/admin` Login und Passwort-Reset.
+2. Anfrage ohne und mit privatem PDF absenden.
+3. Anfrage aus dem Dashboard über `/admin/anfragen/[id]` öffnen, die Detail-URL
+   aktualisieren und per Browser-Zurück zum erhaltenen Filterzustand wechseln.
+4. Status ändern und den neuen Eintrag im Tab `Verlauf` kontrollieren.
+5. Analyse starten und eine Angabe akzeptieren, bearbeiten und ablehnen.
+6. Widerspruch prüfen und Rechenvorschau öffnen.
+7. Testanfrage löschen und die Kaskadenlöschung kontrollieren.
 
-## 8. Vor dem Produktivstart
+## 6. Vor dem Produktivstart
 
-- Supabase Pro verwenden, damit das Projekt nicht wegen Inaktivität pausiert.
-- Supabase-, OpenAI- und Resend-Secrets auch in Vercel eintragen.
-- Produktionsdomain bei Supabase Auth und Resend konfigurieren.
+- Änderungen zuerst auf einem leeren Testprojekt und danach gegen einen
+  Production-Schema-Dump validieren.
+- Erst nach separater SQL-Freigabe auf Production migrieren.
+- Supabase-, OpenAI- und Resend-Secrets in Vercel setzen.
 - Keine Secrets mit `NEXT_PUBLIC_` benennen.
-- RLS niemals deaktivieren, um einen Fehler kurzfristig zu umgehen.
-- Optional Cloudflare Turnstile vor öffentliche Uploads/Formulare setzen, um Bot-Missbrauch stärker zu begrenzen.
+- RLS niemals zur Fehlerbehebung deaktivieren.
+- Resend-Domain und Supabase Auth-URLs für die Produktionsdomain freigeben.

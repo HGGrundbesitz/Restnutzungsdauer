@@ -1,11 +1,34 @@
-import type {Metadata} from 'next';
+import type {Metadata, Viewport} from 'next';
 import './globals.css';
 import {Analytics} from '@vercel/analytics/next';
 import CookieNotice from "@/components/CookieNotice";
+import {DEFAULT_DESCRIPTION, SITE_NAME, SITE_URL} from '@/lib/seo/site';
+
 export const metadata: Metadata = {
-  title: 'Restnutzungsdauer-Gutachten | RND Gutachten',
-  description:
-    'Kostenlose Ersteinschätzung und objektbezogene Restnutzungsdauer-Gutachten für vermietete Immobilien. Nachvollziehbar vorbereitet für Steuerberatung und Finanzamt.',
+  metadataBase: new URL(SITE_URL),
+  applicationName: SITE_NAME,
+  title: {
+    default: 'Restnutzungsdauer-Gutachten | RND Gutachten',
+    template: '%s | RND Gutachten',
+  },
+  description: DEFAULT_DESCRIPTION,
+  category: 'Immobiliengutachten',
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  icons: {
+    icon: [{url: '/icon.png', type: 'image/png'}],
+    apple: [{url: '/icon.png'}],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#ffffff',
+  colorScheme: 'light',
 };
 
 export default function RootLayout({children}: {children: React.ReactNode}) {

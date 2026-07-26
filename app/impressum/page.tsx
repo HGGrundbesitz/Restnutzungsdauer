@@ -1,4 +1,13 @@
+import type {Metadata} from 'next';
 import LegalPage from '@/components/LegalPage';
+import {buildPageMetadata} from '@/lib/seo/site';
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Impressum',
+  description: 'Anbieterkennzeichnung und rechtliche Kontaktinformationen von RND Gutachten.',
+  path: '/impressum',
+  noIndex: true,
+});
 
 export default function ImpressumPage() {
   return (

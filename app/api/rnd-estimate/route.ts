@@ -1,10 +1,13 @@
 import {NextResponse} from 'next/server';
 import {Resend} from 'resend';
-import {calculateRnd} from '@/lib/rnd/calculate-rnd';
+import {calculateRndV2} from '@/lib/rnd/calculate-rnd';
+import {
+  createCustomerEmailHtml,
+  createInternalEmailHtml,
+} from '@/lib/rnd/email-copy';
+import {normalizePublicRndV2Input} from '@/lib/rnd/input-version';
 import {createRndSummaryPdf} from '@/lib/rnd/pdf-summary';
-import {RND_DISCLAIMER} from '@/lib/rnd/result-copy';
-import type {RndContact, RndPropertyContext} from '@/lib/rnd/types';
-import {isRndInput} from '@/lib/rnd/validate-input';
+import type {RndContact, RndPropertyContext, RndResult} from '@/lib/rnd/types';
 import {consumeRateLimit, getRequestFingerprint} from '@/lib/rnd/rate-limit';
 import {getSupabaseAdminClient} from '@/lib/supabase-admin';
 import {verifyUploadCleanupToken} from '@/lib/rnd/upload-cleanup-token';
@@ -30,7 +33,8 @@ export async function POST(request: Request) {
     if (body.honeypot) {
       return NextResponse.json({result: null}, {status: 200});
     }
-    if (!isRndInput(body.input)) {
+    const input = normalizePublicRndV2Input(body.input);
+    if (!input) {
       return NextResponse.json({error: 'Die Berechnungsdaten sind ungültig.'}, {status: 400});
     }
     const contactValidation = validateContact(body.contact);
@@ -43,7 +47,7 @@ export async function POST(request: Request) {
       return NextResponse.json({error: 'Die Anfrage kann momentan nicht gesendet werden. Bitte versuchen Sie es später erneut.'}, {status: 503});
     }
 
-    const result = calculateRnd(body.input);
+    const result = calculateRndV2(input);
     const submittedContact = body.contact as RndContact;
     const contact: RndContact = {
       ...submittedContact,
@@ -97,7 +101,11 @@ export async function POST(request: Request) {
       calculation_method: result.calculationMethod,
       relative_age: result.relativeAge,
       coefficient_snapshot: result.coefficient,
-      raw_answers: {input: body.input, property},
+      raw_answers: {
+        schemaVersion: 'rnd-v2',
+        input,
+        property,
+      },
       warnings: result.warnings,
       result_status: result.status,
       result_copy_version: result.resultCopyVersion,
@@ -160,7 +168,7 @@ async function cleanupUploads(supabase: NonNullable<ReturnType<typeof getSupabas
   if (error) console.error('Orphan upload cleanup failed:', error);
 }
 
-function createAdminSummary(result: ReturnType<typeof calculateRnd>, property: RndPropertyContext) {
+function createAdminSummary(result: RndResult, property: RndPropertyContext) {
   return [
     {label: 'Gebäudeart', value: result.buildingTypeLabel},
     {label: 'GND', value: result.gndYears ? `${result.gndYears} Jahre` : 'Individuelle Zuordnung'},
@@ -171,29 +179,33 @@ function createAdminSummary(result: ReturnType<typeof calculateRnd>, property: R
     {label: 'Modernisierungspunkte', value: `${result.modernizationPointsRounded} / 20`},
     {label: 'Modifizierte RND', value: result.modifiedRnd === null ? 'Manuelle Prüfung' : `${result.modifiedRnd} Jahre`},
     {label: 'Ergebnisstatus', value: result.status === 'calculated' ? 'Rechnerisch ermittelt' : 'Manuelle Prüfung'},
+    {label: 'Modellversion', value: result.modelVersion},
     {label: 'Fläche', value: property.area ? `${property.area} m²` : '-'},
     {label: 'Nutzungseinheiten', value: property.units ? String(property.units) : '-'},
   ];
 }
 
-async function sendEmails({contact, property, result, requestId, documentPaths}: {contact: RndContact; property: RndPropertyContext; result: ReturnType<typeof calculateRnd>; requestId: string; documentPaths: string[]}) {
+async function sendEmails({contact, property, result, requestId, documentPaths}: {contact: RndContact; property: RndPropertyContext; result: RndResult; requestId: string; documentPaths: string[]}) {
   const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return;
+  if (!apiKey) throw new Error('RESEND_API_KEY ist nicht konfiguriert.');
   const resend = new Resend(apiKey);
   const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
   const fromName = process.env.RESEND_FROM_NAME || 'RND Gutachten';
   const from = `${fromName} <${fromEmail}>`;
   const pdf = await createRndSummaryPdf(result, property);
-  const resultValue = result.modifiedRnd === null ? 'Manuelle Prüfung erforderlich' : `ca. ${result.modifiedRnd} Jahre`;
-  const userHtml = `<div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;color:#0f172a"><h2>Guten Tag ${escapeHtml(contact.firstName)},</h2><p>vielen Dank für Ihre Angaben.</p><p><strong>Rechnerische Ersteinschätzung:</strong> ${escapeHtml(resultValue)}</p><ul><li>Gebäudeart: ${escapeHtml(result.buildingTypeLabel)}</li><li>GND: ${result.gndYears ?? '-'} Jahre</li><li>Baujahr: ${result.constructionYear}</li><li>Stichtag: ${escapeHtml(result.referenceDate)}</li><li>Gebäudealter: ${result.actualAge} Jahre</li><li>Modernisierungspunkte: ${result.modernizationPointsRounded} von 20</li></ul><p style="font-size:13px;line-height:1.6;color:#64748b">${escapeHtml(RND_DISCLAIMER)}</p><p>Mit freundlichen Grüßen<br>RND Gutachten</p></div>`;
-  await resend.emails.send({from, to: [contact.email.trim()], replyTo: process.env.CONTACT_EMAIL || undefined, subject: 'Ihre unverbindliche RND-Ersteinschätzung', html: userHtml, attachments: [{filename: 'RND-Ersteinschaetzung.pdf', content: Buffer.from(pdf)}]});
+  const userHtml = createCustomerEmailHtml(contact, result);
+  const userDelivery = await resend.emails.send({from, to: [contact.email.trim()], replyTo: process.env.CONTACT_EMAIL || undefined, subject: 'Ihre unverbindliche RND-Ersteinschätzung', html: userHtml, attachments: [{filename: 'RND-Ersteinschaetzung.pdf', content: Buffer.from(pdf)}]});
+  if (userDelivery.error) throw new Error(`Kunden-E-Mail fehlgeschlagen: ${userDelivery.error.message}`);
 
   if (process.env.CONTACT_EMAIL) {
-    const internalHtml = `<div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;color:#0f172a"><h2>Neue RND-Ersteinschätzung</h2><p><strong>Anfrage-ID:</strong> ${escapeHtml(requestId)}</p><p><strong>Kontakt:</strong> ${escapeHtml(contact.firstName)} ${escapeHtml(contact.lastName)}<br>${escapeHtml(contact.email)}<br>${escapeHtml(contact.phone || 'Telefon nicht angegeben')}</p><p><strong>Objekt:</strong> ${escapeHtml(property.address || result.buildingTypeLabel)}</p><p><strong>Ergebnis:</strong> ${escapeHtml(resultValue)}<br><strong>Status:</strong> ${escapeHtml(result.status)}<br><strong>Dokumente:</strong> ${documentPaths.length}</p></div>`;
-    await resend.emails.send({from, to: [process.env.CONTACT_EMAIL], replyTo: contact.email.trim(), subject: `Neue RND-Ersteinschätzung - ${property.address || result.buildingTypeLabel}`, html: internalHtml});
+    const internalHtml = createInternalEmailHtml({
+      contact,
+      property,
+      result,
+      requestId,
+      documentCount: documentPaths.length,
+    });
+    const internalDelivery = await resend.emails.send({from, to: [process.env.CONTACT_EMAIL], replyTo: contact.email.trim(), subject: `Neue RND-Ersteinschätzung - ${property.address || result.buildingTypeLabel}`, html: internalHtml});
+    if (internalDelivery.error) throw new Error(`Team-E-Mail fehlgeschlagen: ${internalDelivery.error.message}`);
   }
-}
-
-function escapeHtml(value: string) {
-  return value.replace(/[&<>"']/g, (character) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[character] ?? character));
 }

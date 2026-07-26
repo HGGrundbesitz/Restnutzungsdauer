@@ -16,7 +16,7 @@ import {
   Sparkles,
   X,
 } from 'lucide-react';
-import {supabase} from '@/lib/supabase';
+import {adminFetch} from '@/lib/admin/admin-fetch';
 import {
   DOCUMENT_FIELD_LABELS,
   type DocumentConflictRecord,
@@ -26,12 +26,16 @@ import {
   type ReviewBundle,
 } from '@/lib/rnd/document-analysis/types';
 import type {ReviewedFactMappingPreview} from '@/lib/rnd/map-reviewed-facts-to-input';
+import {getModernizationAnswerLabel} from '@/lib/rnd/modernization-question-config';
 import type {RndResult} from '@/lib/rnd/types';
 
 type DocumentReviewPanelProps = {
   requestId: string;
   documentCount: number;
   onToast?: (message: string, type?: 'success' | 'error' | 'info') => void;
+  reviewBundle?: ReviewBundle | null;
+  reviewBundleLoading?: boolean;
+  onReviewBundleReload?: () => Promise<void>;
 };
 
 type CalculationResponse = {
@@ -47,9 +51,16 @@ const STATUS_LABELS: Record<FactReviewStatus, string> = {
   rejected: 'Abgelehnt',
 };
 
-export default function DocumentReviewPanel({requestId, documentCount, onToast}: DocumentReviewPanelProps) {
-  const [bundle, setBundle] = useState<ReviewBundle | null>(null);
-  const [loading, setLoading] = useState(true);
+export default function DocumentReviewPanel({
+  requestId,
+  documentCount,
+  onToast,
+  reviewBundle,
+  reviewBundleLoading,
+  onReviewBundleReload,
+}: DocumentReviewPanelProps) {
+  const [localBundle, setLocalBundle] = useState<ReviewBundle | null>(null);
+  const [localLoading, setLocalLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [documentFilter, setDocumentFilter] = useState('all');
@@ -60,26 +71,38 @@ export default function DocumentReviewPanel({requestId, documentCount, onToast}:
   const [resolutionValue, setResolutionValue] = useState('');
   const [calculation, setCalculation] = useState<CalculationResponse | null>(null);
   const [loadingCalculation, setLoadingCalculation] = useState(false);
+  const isControlled = Boolean(onReviewBundleReload);
+  const bundle = isControlled ? (reviewBundle ?? null) : localBundle;
+  const loading = isControlled ? Boolean(reviewBundleLoading && !reviewBundle) : localLoading;
 
   const loadBundle = useCallback(async () => {
+    if (onReviewBundleReload) {
+      await onReviewBundleReload();
+      return;
+    }
+
     try {
       const response = await adminFetch(`/api/admin/requests/${requestId}/document-review`);
       const result = (await response.json()) as ReviewBundle & {error?: string};
       if (!response.ok) throw new Error(result.error || 'Die Dokumentprüfung konnte nicht geladen werden.');
-      setBundle(result);
+      setLocalBundle(result);
     } catch (error) {
       onToast?.(getErrorMessage(error), 'error');
     } finally {
-      setLoading(false);
+      setLocalLoading(false);
     }
-  }, [onToast, requestId]);
+  }, [onReviewBundleReload, onToast, requestId]);
 
   useEffect(() => {
-    setLoading(true);
-    setBundle(null);
+    if (isControlled) {
+      return;
+    }
+
+    setLocalLoading(true);
+    setLocalBundle(null);
     setCalculation(null);
     void loadBundle();
-  }, [loadBundle]);
+  }, [isControlled, loadBundle]);
 
   const openConflictFactIds = useMemo(
     () => new Set(bundle?.conflicts.filter((conflict) => conflict.resolution_status === 'open').flatMap((conflict) => conflict.fact_ids) ?? []),
@@ -98,12 +121,35 @@ export default function DocumentReviewPanel({requestId, documentCount, onToast}:
       ),
     [bundle?.facts, documentFilter, openConflictFactIds, statusFilter],
   );
+  const factGroups = useMemo(
+    () => [
+      {
+        key: 'pending',
+        title: 'Offene Angaben',
+        description: 'Diese Angaben werden noch nicht für Berechnungen verwendet.',
+        facts: visibleFacts.filter((fact) => fact.review_status === 'pending_review'),
+      },
+      {
+        key: 'approved',
+        title: 'Bestätigte Angaben',
+        description: 'Nur übernommene oder bearbeitete Werte dürfen in einen neuen Prüfstand einfließen.',
+        facts: visibleFacts.filter((fact) => fact.review_status === 'accepted' || fact.review_status === 'edited'),
+      },
+      {
+        key: 'rejected',
+        title: 'Abgelehnte Angaben',
+        description: 'Diese Angaben bleiben nachvollziehbar, sind aber von der Berechnung ausgeschlossen.',
+        facts: visibleFacts.filter((fact) => fact.review_status === 'rejected'),
+      },
+    ].filter((group) => group.facts.length > 0),
+    [visibleFacts],
+  );
 
   const analyzeDocuments = async () => {
     if (
       bundle?.runs.length &&
       !window.confirm(
-        'Die erneute Prüfung ersetzt die bisher erkannten Angaben und deren Prüfentscheidungen. Möchten Sie fortfahren?',
+        'Die erneute Prüfung erstellt einen neuen Analyselauf. Der bisherige Lauf bleibt in der Historie erhalten, wird aber nicht mehr als aktuell verwendet. Möchten Sie fortfahren?',
       )
     ) {
       return;
@@ -302,26 +348,44 @@ export default function DocumentReviewPanel({requestId, documentCount, onToast}:
             </FilterSelect>
           </div>
 
-          <div className="space-y-3">
-            {visibleFacts.map((fact) => (
-              <FactCard
-                key={fact.id}
-                fact={fact}
-                hasConflict={openConflictFactIds.has(fact.id)}
-                sourceUrl={bundle.signedDocumentUrls[fact.document_path]}
-                busy={busyId === fact.id}
-                editing={editingFactId === fact.id}
-                editValue={editValue}
-                onEditValueChange={setEditValue}
-                onStartEdit={() => {
-                  setEditingFactId(fact.id);
-                  setEditValue(formatValue(fact.reviewed_value ?? fact.normalized_value));
-                }}
-                onCancelEdit={() => setEditingFactId(null)}
-                onAction={(action) => void reviewFact(fact, action)}
-              />
-            ))}
-          </div>
+          {factGroups.length > 0 ? (
+            <div className="space-y-6">
+              {factGroups.map((group) => (
+                <section key={group.key} aria-labelledby={`fact-group-${group.key}`} className="space-y-3">
+                  <div>
+                    <h4 id={`fact-group-${group.key}`} className="text-sm font-semibold text-[var(--color-ink)]">
+                      {group.title}
+                    </h4>
+                    <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">{group.description}</p>
+                  </div>
+                  <div className="space-y-3">
+                    {group.facts.map((fact) => (
+                      <FactCard
+                        key={fact.id}
+                        fact={fact}
+                        hasConflict={openConflictFactIds.has(fact.id)}
+                        sourceUrl={bundle.signedDocumentUrls[fact.document_path]}
+                        busy={busyId === fact.id}
+                        editing={editingFactId === fact.id}
+                        editValue={editValue}
+                        onEditValueChange={setEditValue}
+                        onStartEdit={() => {
+                          setEditingFactId(fact.id);
+                          setEditValue(formatValue(fact.reviewed_value ?? fact.normalized_value));
+                        }}
+                        onCancelEdit={() => setEditingFactId(null)}
+                        onAction={(action) => void reviewFact(fact, action)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          ) : (
+            <div className="admin-card-muted rounded-[1.1rem] px-4 py-5 text-sm text-[var(--color-text-muted)]">
+              Für diese Filterauswahl sind keine Angaben vorhanden.
+            </div>
+          )}
 
           <div className="rounded-[1.35rem] border border-[var(--color-border)] bg-white/70 p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -494,9 +558,9 @@ function CalculationPreview({calculation, busy, onCalculate}: {calculation: Calc
       <div className="mt-3 space-y-2">
         {preview.changes.map((change) => (
           <div key={`${change.fieldKey}:${change.target}`} className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-[0.9rem] bg-[var(--color-surface)] px-3 py-2.5 text-xs">
-            <div><span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Bisher</span><span className="font-semibold text-[var(--color-ink)]">{formatValue(change.originalValue)}</span></div>
+            <div><span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Bisher</span><span className="font-semibold text-[var(--color-ink)]">{formatMappingValue(change)}</span></div>
             <ArrowRight size={13} className="text-[var(--color-accent)]" />
-            <div className="text-right"><span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Bestätigt</span><span className="font-semibold text-[var(--color-ink)]">{formatValue(change.acceptedValue)}</span></div>
+            <div className="text-right"><span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Bestätigt</span><span className="font-semibold text-[var(--color-ink)]">{formatMappingValue(change, true)}</span></div>
           </div>
         ))}
         {preview.changes.length === 0 ? <p className="text-xs text-[var(--color-text-muted)]">Noch keine bestätigten Werte für den Rechner.</p> : null}
@@ -541,20 +605,6 @@ function FilterSelect({value, onChange, ariaLabel, children}: {value: string; on
   return <label className="relative flex-1"><Filter size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" /><select value={value} onChange={(event) => onChange(event.target.value)} aria-label={ariaLabel} className="w-full appearance-none rounded-[0.9rem] border border-[var(--color-border)] bg-white py-2.5 pl-8 pr-8 text-xs font-medium text-[var(--color-ink)] outline-none focus:border-[var(--color-accent)]">{children}</select><ChevronDown size={13} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" /></label>;
 }
 
-async function adminFetch(input: RequestInfo | URL, init: RequestInit = {}) {
-  const {data, error} = await supabase.auth.getSession();
-  if (error || !data.session?.access_token) throw new Error('Bitte melden Sie sich erneut im Adminbereich an.');
-  return fetch(input, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${data.session.access_token}`,
-      ...init.headers,
-    },
-    cache: 'no-store',
-  });
-}
-
 function parseEditorValue(value: string, example: NormalizedFactValue): NormalizedFactValue {
   const trimmed = value.trim();
   if (typeof example === 'number') {
@@ -572,6 +622,21 @@ function formatValue(value: NormalizedFactValue | undefined) {
   if (value === null || value === undefined || value === '') return '–';
   if (typeof value === 'boolean') return value ? 'Ja' : 'Nein';
   return String(value);
+}
+
+function formatMappingValue(
+  change: ReviewedFactMappingPreview['changes'][number],
+  accepted = false,
+) {
+  const value = accepted ? change.acceptedValue : change.originalValue;
+  if (
+    change.modernizationKey
+    && typeof value === 'number'
+    && (value === 0 || value === 1 || value === 2)
+  ) {
+    return getModernizationAnswerLabel(change.modernizationKey, value);
+  }
+  return formatValue(value);
 }
 
 function getErrorMessage(error: unknown) {

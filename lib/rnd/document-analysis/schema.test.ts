@@ -22,6 +22,14 @@ function validOutput(overrides: Record<string, unknown> = {}) {
         evidenceText: 'Das mittlere Baujahr wird mit etwa 1975 ermittelt.',
         confidence: 0.94,
         extractionNotes: 'Im Dokument als ungefähr bezeichnet.',
+        metadata: {
+          yearFrom: 1975,
+          yearTo: 1975,
+          scopePercent: null,
+          scopeDescription: null,
+          evidenceQuality: 'high',
+          proofStatus: 'proven',
+        },
         status: 'pending_review',
         ...overrides,
       },
@@ -63,4 +71,3 @@ test('rejects malformed or extended AI objects instead of storing them', () => {
     /ungültigen normalisierten Wert/,
   );
 });
-

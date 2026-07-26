@@ -17,8 +17,8 @@ export default function DeleteConfirmationModal({
   isDeleting,
   onClose,
   onConfirm,
-  title = 'Anfrage loeschen',
-  message = 'Moechten Sie diese Anfrage wirklich loeschen? Diese Aktion kann nicht rueckgaengig gemacht werden und alle zugehörigen Daten werden dauerhaft entfernt.',
+  title = 'Anfrage löschen',
+  message = 'Möchten Sie diese Anfrage wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden und alle zugehörigen Daten werden dauerhaft entfernt.',
 }: DeleteConfirmationModalProps) {
   return (
     <AnimatePresence>
@@ -73,7 +73,7 @@ export default function DeleteConfirmationModal({
                       Wird gelöscht...
                     </>
                   ) : (
-                    'Endgueltig loeschen'
+                    'Endgültig löschen'
                   )}
                 </button>
               </div>
