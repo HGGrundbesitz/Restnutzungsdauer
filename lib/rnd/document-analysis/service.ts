@@ -196,6 +196,12 @@ async function analyzeSingleDocument({
     };
   } catch (error) {
     const safeError = getSafeAnalysisError(error);
+    console.error('Document analysis execution failed:', {
+      requestId,
+      documentPath,
+      model,
+      error: getDiagnosticAnalysisError(error),
+    });
     await supabase
       .from('document_analysis_runs')
       .update({
@@ -207,6 +213,28 @@ async function analyzeSingleDocument({
       .eq('id', run.id);
     return {documentPath, status: 'failed' as const, factCount: 0, error: safeError};
   }
+}
+
+function getDiagnosticAnalysisError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return {name: 'UnknownError'};
+  }
+
+  const apiError = error as Error & {
+    status?: number;
+    code?: string;
+    param?: string;
+    request_id?: string;
+  };
+
+  return {
+    name: apiError.name,
+    message: apiError.message,
+    status: apiError.status,
+    code: apiError.code,
+    param: apiError.param,
+    requestId: apiError.request_id,
+  };
 }
 
 function getSafeAnalysisError(error: unknown) {

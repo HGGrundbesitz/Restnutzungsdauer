@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {parseDocumentExtractionOutput} from './schema.ts';
+import {
+  DOCUMENT_EXTRACTION_JSON_SCHEMA,
+  parseDocumentExtractionOutput,
+} from './schema.ts';
 
 const context = {
   documentPath: 'rnd-estimates/11111111-1111-4111-8111-111111111111/bauakte.pdf',
@@ -70,4 +73,18 @@ test('rejects malformed or extended AI objects instead of storing them', () => {
     () => parseDocumentExtractionOutput(validOutput({normalizedValue: null}), context),
     /ungültigen normalisierten Wert/,
   );
+});
+
+test('keeps every strict metadata property required and nullable', () => {
+  const metadataSchema =
+    DOCUMENT_EXTRACTION_JSON_SCHEMA.properties.facts.items.properties.metadata;
+  const propertyNames = Object.keys(metadataSchema.properties).sort();
+
+  assert.deepEqual([...metadataSchema.required].sort(), propertyNames);
+  for (const property of Object.values(metadataSchema.properties)) {
+    assert.ok(
+      property.anyOf.some((variant) => variant.type === 'null'),
+      'Every optional metadata property must be represented as nullable.',
+    );
+  }
 });
