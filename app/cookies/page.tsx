@@ -1,4 +1,13 @@
+import type {Metadata} from 'next';
 import LegalPage from '@/components/LegalPage';
+import {buildPageMetadata} from '@/lib/seo/site';
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Cookie-Einstellungen',
+  description: 'Informationen zu technisch notwendiger Speicherung und Cookie-Einstellungen auf rnd-gutachten.de.',
+  path: '/cookies',
+  noIndex: true,
+});
 
 export default function CookiesPage() {
   return (

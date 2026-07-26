@@ -6,7 +6,14 @@ import {
   type DocumentFieldKey,
   type NormalizedFactValue,
 } from './document-analysis/types.ts';
-import type {ModernizationPeriod, RndInput, RndPropertyContext} from './types.ts';
+import type {ModernizationQuestionKey} from './modernization-question-config.ts';
+import type {
+  ModernizationPeriod,
+  RndAnswerIndex,
+  RndInput,
+  RndPropertyContext,
+} from './types.ts';
+import {isRndInputV2} from './validate-input.ts';
 
 export type MappingChange = {
   fieldKey: DocumentFieldKey;
@@ -15,6 +22,7 @@ export type MappingChange = {
   acceptedValue: NormalizedFactValue;
   sourceFactIds: string[];
   changed: boolean;
+  modernizationKey?: ModernizationQuestionKey;
 };
 
 export type ReviewedFactMappingPreview = {
@@ -62,6 +70,7 @@ const DIRECTLY_MAPPABLE_FIELDS = new Set<DocumentFieldKey>([
   'facade_insulation_year',
   'bathroom_modernization_year',
   'interior_modernization_year',
+  'floorplan_modernization_year',
 ]);
 
 export function mapReviewedFactsToInput({
@@ -182,6 +191,7 @@ export function mapReviewedFactsToInput({
   applyModernizationYear('facade_insulation_year', 'Außenwände', 'exteriorWalls');
   applyModernizationYear('bathroom_modernization_year', 'Bäder', 'bathrooms');
   applyModernizationYear('interior_modernization_year', 'Innenausbau', 'interior');
+  applyFloorplanFact();
 
   for (const fact of acceptedFacts) {
     if (!DIRECTLY_MAPPABLE_FIELDS.has(fact.field_key)) {
@@ -229,21 +239,71 @@ export function mapReviewedFactsToInput({
   function applyModernizationYear(
     fieldKey: DocumentFieldKey,
     target: string,
-    modernizationKey: keyof Omit<RndInput['modernization'], 'floorplan'>,
+    modernizationKey: Exclude<ModernizationQuestionKey, 'floorplan'>,
   ) {
     const accepted = getAccepted(fieldKey);
     if (!accepted || typeof accepted.value !== 'number') return;
     const sourceFacts = acceptedFacts.filter((fact) => accepted.factIds.includes(fact.id));
-    if (sourceFacts.some((fact) => ['not_proven', 'unknown'].includes(fact.fact_metadata?.proofStatus ?? ''))) return;
+    if (sourceFacts.some((fact) => ['not_proven', 'unknown'].includes(fact.fact_metadata?.proofStatus ?? ''))) {
+      warnings.push(`${target}: Eine nicht nachgewiesene Angabe wurde nicht in den Rechner übernommen.`);
+      return;
+    }
     const year = sourceFacts[0]?.fact_metadata?.yearTo ?? sourceFacts[0]?.fact_metadata?.yearFrom ?? accepted.value;
-    const period = modernizationPeriodFromYear(year, input.referenceDate);
-    if (!period) {
+    const converted = isRndInputV2(input)
+      ? modernizationAnswerFromYear(year, input.referenceDate)
+      : modernizationPeriodFromYear(year, input.referenceDate);
+    if (converted === null) {
       warnings.push(`${target}: Das bestätigte Jahr liegt nach dem Stichtag und wurde nicht übernommen.`);
       return;
     }
     const originalValue = input.modernization[modernizationKey];
-    input.modernization[modernizationKey] = period;
-    addChange(fieldKey, `Modernisierung ${target}`, originalValue, period, accepted.factIds);
+    if (isRndInputV2(input)) {
+      input.modernization[modernizationKey] = converted as RndAnswerIndex;
+    } else {
+      input.modernization[modernizationKey] = converted as ModernizationPeriod;
+    }
+    if (sourceFacts.some((fact) => fact.fact_metadata?.proofStatus === 'partially_proven')) {
+      warnings.push(`${target}: Die übernommene Modernisierung ist laut Dokument nur teilweise nachgewiesen.`);
+    }
+    addChange(
+      fieldKey,
+      `Modernisierung ${target}`,
+      originalValue,
+      converted,
+      accepted.factIds,
+      undefined,
+      modernizationKey,
+    );
+  }
+
+  function applyFloorplanFact() {
+    const accepted = getAccepted('floorplan_modernization_year');
+    if (!accepted) return;
+    const sourceFacts = acceptedFacts.filter((fact) => accepted.factIds.includes(fact.id));
+    if (sourceFacts.some((fact) => ['not_proven', 'unknown'].includes(fact.fact_metadata?.proofStatus ?? ''))) {
+      warnings.push('Grundriss: Eine nicht nachgewiesene Angabe wurde nicht in den Rechner übernommen.');
+      return;
+    }
+    if (!isRndInputV2(input)) {
+      warnings.push('Grundriss: Der bestätigte Dokumenthinweis bleibt für die fachliche V1-Prüfung sichtbar.');
+      return;
+    }
+    const answer = floorplanAnswerFromFacts(sourceFacts);
+    if (answer === null) {
+      warnings.push('Grundriss: Der Beleg beschreibt nicht eindeutig, ob die Änderung teilweise oder deutlich war.');
+      return;
+    }
+    const originalValue = input.modernization.floorplan;
+    input.modernization.floorplan = answer;
+    addChange(
+      'floorplan_modernization_year',
+      'Modernisierung Grundriss',
+      originalValue,
+      answer,
+      accepted.factIds,
+      undefined,
+      'floorplan',
+    );
   }
 
   function applyContextNumber(fieldKey: DocumentFieldKey, key: keyof RndPropertyContext) {
@@ -258,8 +318,9 @@ export function mapReviewedFactsToInput({
     acceptedValue: NormalizedFactValue,
     sourceFactIds: string[],
     changed = serializeComparable(originalValue) !== serializeComparable(acceptedValue),
+    modernizationKey?: ModernizationQuestionKey,
   ) {
-    changes.push({fieldKey, target, originalValue, acceptedValue, sourceFactIds, changed});
+    changes.push({fieldKey, target, originalValue, acceptedValue, sourceFactIds, changed, modernizationKey});
   }
 }
 
@@ -272,6 +333,30 @@ export function modernizationPeriodFromYear(year: number, referenceDate: string)
   if (age <= 15) return 'within_15';
   if (age <= 20) return 'within_20';
   return 'older_or_never';
+}
+
+export function modernizationAnswerFromYear(year: number, referenceDate: string): RndAnswerIndex | null {
+  const referenceYear = new Date(`${referenceDate}T00:00:00`).getFullYear();
+  if (!Number.isInteger(year) || !Number.isInteger(referenceYear) || year > referenceYear) return null;
+  const age = referenceYear - year;
+  if (age > 15) return 0;
+  if (age >= 10) return 1;
+  return 2;
+}
+
+function floorplanAnswerFromFacts(
+  facts: Array<Pick<DocumentFactRecord, 'fact_metadata'>>,
+): RndAnswerIndex | null {
+  for (const fact of facts) {
+    const metadata = fact.fact_metadata;
+    const description = metadata?.scopeDescription?.trim().toLocaleLowerCase('de-DE') ?? '';
+    if (/\b(keine|nicht verändert|unverändert)\b/.test(description) || metadata?.scopePercent === 0) return 0;
+    if (/\b(teilweise|in teilen)\b/.test(description)) return 1;
+    if (/\b(wesentlich|deutlich|umfassend|vollständig)\b/.test(description)) return 2;
+    if (metadata?.scopePercent === 100) return 2;
+    if (typeof metadata?.scopePercent === 'number' && metadata.scopePercent > 0) return 1;
+  }
+  return null;
 }
 
 function serializeComparable(value: NormalizedFactValue) {

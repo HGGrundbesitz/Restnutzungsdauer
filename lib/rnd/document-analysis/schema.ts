@@ -43,6 +43,14 @@ export const DOCUMENT_EXTRACTION_JSON_SCHEMA = {
           metadata: {
             type: 'object',
             additionalProperties: false,
+            required: [
+              'yearFrom',
+              'yearTo',
+              'scopePercent',
+              'scopeDescription',
+              'evidenceQuality',
+              'proofStatus',
+            ],
             properties: {
               yearFrom: {anyOf: [{type: 'integer'}, {type: 'null'}]},
               yearTo: {anyOf: [{type: 'integer'}, {type: 'null'}]},

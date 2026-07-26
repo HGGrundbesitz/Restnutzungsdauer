@@ -56,7 +56,7 @@ async function handlePreview(request: Request, context: RouteContext, persist: b
       const [factsResult, conflictsResult] = await Promise.all([
         authorization.supabase
           .from('document_facts')
-          .select('id, field_key, normalized_value, reviewed_value, review_status')
+          .select('id, field_key, normalized_value, reviewed_value, review_status, fact_metadata')
           .eq('request_id', requestId)
           .in('analysis_run_id', currentRunIds),
         authorization.supabase

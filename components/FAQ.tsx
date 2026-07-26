@@ -3,52 +3,15 @@
 import {useMemo, useState} from 'react';
 import {AnimatePresence, motion} from 'motion/react';
 import {ChevronDown, HelpCircle} from 'lucide-react';
-
-const faqs = [
-  {
-    question: 'Wird das Gutachten vom Finanzamt anerkannt?',
-    answer: 'Eine Anerkennung kann nicht garantiert werden. Wichtig ist eine nachvollziehbare, objektbezogene Herleitung. Das Gutachten wird so aufbereitet, dass die Annahmen und Bewertungslogik für die Einreichung verständlich dokumentiert sind. Die steuerliche Einordnung sollte mit Ihrer Steuerberatung erfolgen.',
-  },
-  {
-    question: 'Welche Unterlagen muss ich beibringen?',
-    answer: 'Hilfreich sind Baujahr, Grundrisse, Wohn- und Nutzflächenangaben, Kaufvertrag oder Kaufpreisaufteilung, Modernisierungsnachweise, Fotos sowie Hinweise zu Schäden oder Sanierungsstau. Für den ersten Check müssen nicht alle Dokumente sofort vorliegen.',
-  },
-  {
-    question: 'Brauche ich eine Vor-Ort-Besichtigung?',
-    answer: 'Ja. Um ein fundiertes Gutachten zu erstellen, ist eine Vor-Ort-Besichtigung nötig. Die digitale Ersteinschätzung und Ihre Unterlagen helfen uns, den Termin gezielt vorzubereiten.',
-  },
-  {
-    question: 'Für wen lohnt sich ein Restnutzungsdauer-Gutachten eher nicht?',
-    answer: 'Eher ungeeignet kann es bei sehr jungen Gebäuden, frisch kernsanierten Objekten, selbstgenutzten Immobilien oder geringem Gebäudeanteil sein. Genau deshalb startet der Prozess mit einer unverbindlichen Ersteinschätzung.',
-  },
-  {
-    question: 'Kann ich das Gutachten rückwirkend nutzen?',
-    answer: 'Das hängt vom Einzelfall und den offenen Steuerjahren ab. Bitte stimmen Sie eine rückwirkende Nutzung immer mit Ihrer Steuerberatung ab.',
-  },
-  {
-    question: 'Ist das Steuerberatung?',
-    answer: 'Nein. Das Gutachten bezieht sich auf die Restnutzungsdauer und die technische bzw. bewertungsbezogene Herleitung. Steuerliche Entscheidungen und Einreichung sollten über Ihre Steuerberatung begleitet werden.',
-  },
-  {
-    question: 'Wie wirkt sich eine höhere AfA auf meinen Cashflow aus?',
-    answer: 'Eine kürzere begründbare Restnutzungsdauer kann die jährliche Abschreibung erhöhen. Dadurch kann sich die steuerliche Belastung reduzieren. Der konkrete Effekt hängt von Ihrem Einzelfall ab.',
-  },
-  {
-    question: 'Was kostet ein Restnutzungsdauer-Gutachten?',
-    answer: 'Die Kosten hängen von Objektart, Unterlagenlage und Umfang der Prüfung ab. Nach der Ersteinschätzung erhalten Sie ein klares Angebot, bevor ein Auftrag startet.',
-  },
-  {
-    question: 'Wie schnell bekomme ich eine Einschätzung?',
-    answer: 'Der digitale Schnellcheck ist in wenigen Minuten ausgefüllt. Die Dauer eines vollständigen Gutachtens hängt anschließend vom Objekt, Rückfragen und der Vollständigkeit der Unterlagen ab.',
-  },
-];
-
-const INITIAL_VISIBLE_COUNT = 5;
+import {FAQS, INITIAL_VISIBLE_FAQ_COUNT} from '@/lib/content/faqs';
 
 export default function FAQ({embedded = false}: {embedded?: boolean}) {
   const [openIndex, setOpenIndex] = useState(0);
   const [showAll, setShowAll] = useState(false);
-  const visibleFaqs = useMemo(() => (showAll ? faqs : faqs.slice(0, INITIAL_VISIBLE_COUNT)), [showAll]);
+  const visibleFaqs = useMemo(
+    () => (showAll ? FAQS : FAQS.slice(0, INITIAL_VISIBLE_FAQ_COUNT)),
+    [showAll],
+  );
 
   return (
     <section id="faq" className={embedded ? 'relative z-10 scroll-mt-32 overflow-hidden rounded-[2.2rem] border border-[var(--color-border)] bg-[rgba(255,255,255,0.76)] p-4 shadow-[0_36px_90px_-52px_rgba(15,23,42,0.3)] backdrop-blur-2xl sm:p-6' : 'relative z-10 mx-auto max-w-[1180px] scroll-mt-32 overflow-hidden px-4 py-20 sm:px-6 md:py-28'}>
@@ -79,7 +42,7 @@ export default function FAQ({embedded = false}: {embedded?: boolean}) {
             })}
           </AnimatePresence>
         </motion.div>
-        {faqs.length > INITIAL_VISIBLE_COUNT ? <div className="mt-5 flex justify-center"><button type="button" onClick={() => setShowAll((current) => !current)} className="inline-flex items-center justify-center gap-3 rounded-full border border-[var(--color-border)] bg-white px-6 py-3 text-sm font-bold text-[var(--color-ink)] shadow-[0_18px_42px_-34px_rgba(15,23,42,0.28)] transition-all duration-300 hover:-translate-y-1 hover:border-[var(--color-border-strong)] hover:shadow-[0_24px_50px_-36px_rgba(15,23,42,0.32)]">{showAll ? 'Weniger anzeigen' : 'Mehr Fragen anzeigen'}<ChevronDown className={`transition-transform duration-300 ${showAll ? 'rotate-180' : ''}`} size={18} /></button></div> : null}
+        {FAQS.length > INITIAL_VISIBLE_FAQ_COUNT ? <div className="mt-5 flex justify-center"><button type="button" onClick={() => setShowAll((current) => !current)} className="inline-flex items-center justify-center gap-3 rounded-full border border-[var(--color-border)] bg-white px-6 py-3 text-sm font-bold text-[var(--color-ink)] shadow-[0_18px_42px_-34px_rgba(15,23,42,0.28)] transition-all duration-300 hover:-translate-y-1 hover:border-[var(--color-border-strong)] hover:shadow-[0_24px_50px_-36px_rgba(15,23,42,0.32)]">{showAll ? 'Weniger anzeigen' : 'Mehr Fragen anzeigen'}<ChevronDown className={`transition-transform duration-300 ${showAll ? 'rotate-180' : ''}`} size={18} /></button></div> : null}
       </div>
     </section>
   );

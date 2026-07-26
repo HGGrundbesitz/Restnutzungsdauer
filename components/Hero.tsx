@@ -1,14 +1,22 @@
 'use client';
 
-import {useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import Image from 'next/image';
 import {ArrowRight} from 'lucide-react';
 import {motion, useReducedMotion, useScroll, useTransform} from 'motion/react';
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
+type NetworkInformation = {
+  effectiveType?: string;
+  saveData?: boolean;
+};
+
 export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoAllowed, setVideoAllowed] = useState(false);
+  const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
   const reduceMotion = useReducedMotion();
@@ -20,6 +28,68 @@ export default function Hero() {
   const mediaScale = useTransform(scrollYProgress, [0, 1], [1, 1.035]);
   const contentY = useTransform(scrollYProgress, [0, 1], [0, -18]);
 
+  useEffect(() => {
+    const connection = (window.navigator as Navigator & {connection?: NetworkInformation}).connection;
+    const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let cancelled = false;
+    let fallbackId: ReturnType<typeof setTimeout> | undefined;
+
+    const scheduleVideo = () => {
+      if (
+        reducedMotionQuery.matches ||
+        connection?.saveData ||
+        connection?.effectiveType === 'slow-2g' ||
+        connection?.effectiveType === '2g'
+      ) {
+        setVideoAllowed(false);
+        setShouldLoadVideo(false);
+        return;
+      }
+
+      setVideoAllowed(true);
+      fallbackId = globalThis.setTimeout(() => {
+        if (!cancelled) setShouldLoadVideo(true);
+      }, 650);
+    };
+
+    const handleMotionPreference = () => {
+      if (fallbackId !== undefined) globalThis.clearTimeout(fallbackId);
+      scheduleVideo();
+    };
+
+    if (document.readyState === 'complete') {
+      scheduleVideo();
+    } else {
+      window.addEventListener('load', scheduleVideo, {once: true});
+    }
+    reducedMotionQuery.addEventListener('change', handleMotionPreference);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('load', scheduleVideo);
+      reducedMotionQuery.removeEventListener('change', handleMotionPreference);
+      if (fallbackId !== undefined) globalThis.clearTimeout(fallbackId);
+    };
+  }, []);
+
+  const revealVideo = useCallback(async () => {
+    const video = videoRef.current;
+    if (!video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return;
+
+    try {
+      await video.play();
+      setVideoReady(true);
+    } catch {
+      setVideoFailed(true);
+      setVideoReady(false);
+    }
+  }, []);
+
+  const keepPosterVisible = useCallback(() => {
+    setVideoFailed(true);
+    setVideoReady(false);
+  }, []);
+
   return (
     <section
       ref={sectionRef}
@@ -28,49 +98,40 @@ export default function Hero() {
     >
       <motion.div
         aria-hidden="true"
-        className="absolute inset-0"
+        className="pointer-events-none absolute inset-0"
         style={reduceMotion ? undefined : {y: mediaY, scale: mediaScale}}
       >
-        {reduceMotion || videoFailed ? (
-          <Image
-            src="/rnd/hero-building.png"
-            alt=""
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover object-[72%_bottom] sm:object-[64%_bottom] md:object-[center_bottom]"
-          />
-        ) : (
+        <Image
+          src="/rnd/hero-poster.webp"
+          alt=""
+          fill
+          priority
+          fetchPriority="high"
+          sizes="100vw"
+          className="object-cover object-[72%_bottom] sm:object-[64%_bottom] md:object-[center_bottom]"
+        />
+
+        {videoAllowed && shouldLoadVideo && !videoFailed ? (
           <video
+            ref={videoRef}
             autoPlay
             muted
             loop
             playsInline
-            preload="auto"
-            onLoadedData={() => setVideoReady(true)}
-            onCanPlay={() => setVideoReady(true)}
-            onError={() => setVideoFailed(true)}
-            className={`absolute inset-0 h-full w-full object-cover object-[72%_bottom] transition-opacity duration-1000 ease-out sm:object-[64%_bottom] md:object-[center_bottom] ${
+            preload="metadata"
+            poster="/rnd/hero-poster.webp"
+            onLoadedData={() => void revealVideo()}
+            onCanPlay={() => void revealVideo()}
+            onError={keepPosterVisible}
+            onAbort={keepPosterVisible}
+            onStalled={() => setVideoReady(false)}
+            className={`absolute inset-0 h-full w-full object-cover object-[72%_bottom] transition-opacity duration-700 ease-out sm:object-[64%_bottom] md:object-[center_bottom] ${
               videoReady ? 'opacity-100' : 'opacity-0'
             }`}
           >
+            <source media="(max-width: 767px)" src="/rnd/hero-cinematic-mobile.mp4" type="video/mp4" />
             <source src="/rnd/hero-cinematic.mp4" type="video/mp4" />
           </video>
-        )}
-
-        {!reduceMotion && !videoFailed ? (
-          <motion.div
-            initial={false}
-            animate={{opacity: videoReady ? 0 : 1}}
-            transition={{duration: 0.72, ease}}
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_72%_38%,rgba(218,229,248,0.72),transparent_34%),linear-gradient(120deg,#ffffff_12%,#f1f5fb_54%,#dfe8f5_100%)]"
-          >
-            <motion.div
-              animate={{x: ['-35%', '135%']}}
-              transition={{duration: 1.8, ease: 'easeInOut', repeat: Infinity}}
-              className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/70 to-transparent blur-2xl"
-            />
-          </motion.div>
         ) : null}
       </motion.div>
 

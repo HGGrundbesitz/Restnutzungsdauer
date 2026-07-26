@@ -1,8 +1,8 @@
 import {NextResponse} from 'next/server';
-import {calculateRnd} from '@/lib/rnd/calculate-rnd';
+import {calculateRndV2} from '@/lib/rnd/calculate-rnd';
+import {normalizePublicRndV2Input} from '@/lib/rnd/input-version';
 import {createRndSummaryPdf} from '@/lib/rnd/pdf-summary';
 import type {RndPropertyContext} from '@/lib/rnd/types';
-import {isRndInput} from '@/lib/rnd/validate-input';
 import {consumeRateLimit, getRequestFingerprint} from '@/lib/rnd/rate-limit';
 
 export async function POST(request: Request) {
@@ -13,10 +13,11 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as {input?: unknown; property?: RndPropertyContext};
-    if (!isRndInput(body.input)) {
+    const input = normalizePublicRndV2Input(body.input);
+    if (!input) {
       return NextResponse.json({error: 'Die Berechnungsdaten sind ungültig.'}, {status: 400});
     }
-    const result = calculateRnd(body.input);
+    const result = calculateRndV2(input);
     const pdf = await createRndSummaryPdf(result, body.property ?? {});
     return new NextResponse(Buffer.from(pdf), {
       headers: {

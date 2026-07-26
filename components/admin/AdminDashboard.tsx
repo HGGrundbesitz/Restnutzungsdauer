@@ -1,8 +1,9 @@
 ﻿'use client';
 
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {AnimatePresence, motion} from 'motion/react';
+import {motion} from 'motion/react';
 import Link from 'next/link';
+import {useRouter} from 'next/navigation';
 import {
   BarChart3,
   CheckCircle,
@@ -14,63 +15,24 @@ import {
   FileText,
   Filter,
   Inbox,
-  LayoutDashboard,
   Loader2,
-  LogOut,
-  MoreHorizontal,
   RefreshCw,
   Search,
-  ShieldCheck,
   Trash2,
 } from 'lucide-react';
 import {Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 import {supabase} from '@/lib/supabase';
+import type {AdminRequestRecord as Request} from '@/lib/admin/request-types';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
-import RequestDetailsPanel from './RequestDetailsPanel';
 import {ToastContainer, ToastProps, ToastType} from './Toast';
 
-type QuickCheckAnswer = {
-  label: string;
-  value: string;
-};
-
-type RndEstimate = {
-  id: string;
-  model_version: string;
-  stichtag: string;
-  building_type_label: string;
-  gnd_years: number | null;
-  actual_age: number;
-  preliminary_rnd: number | null;
-  modernization_points_rounded: number;
-  modified_rnd: number | null;
-  calculation_method: string;
-  result_status: 'calculated' | 'manual_review';
-  warnings: {code: string; message: string}[];
-};
-
-type Request = {
-  id: string;
-  created_at: string;
-  name: string;
-  email: string;
-  phone?: string | null;
-  address: string;
-  year: number | null;
-  status: 'pending' | 'reviewing' | 'completed';
-  documents: string[];
-  source?: string | null;
-  quick_check_answers?: QuickCheckAnswer[] | null;
-  rnd_estimates?: RndEstimate | RndEstimate[] | null;
-};
-
-export default function AdminDashboard({session}: {session: any}) {
+export default function AdminDashboard() {
+  const router = useRouter();
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [requestToDelete, setRequestToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -79,6 +41,46 @@ export default function AdminDashboard({session}: {session: any}) {
   const toastCounterRef = useRef(0);
 
   const itemsPerPage = 10;
+
+  const readDashboardLocation = useCallback(() => {
+    const params = new URLSearchParams(window.location.search);
+    const nextStatus = params.get('status');
+    const nextPage = Number(params.get('seite'));
+
+    setSearchQuery(params.get('suche') || '');
+    setStatusFilter(
+      nextStatus === 'pending' || nextStatus === 'reviewing' || nextStatus === 'completed' ? nextStatus : 'all',
+    );
+    setCurrentPage(Number.isInteger(nextPage) && nextPage > 0 ? nextPage : 1);
+  }, []);
+
+  useEffect(() => {
+    readDashboardLocation();
+    window.addEventListener('popstate', readDashboardLocation);
+    return () => window.removeEventListener('popstate', readDashboardLocation);
+  }, [readDashboardLocation]);
+
+  const updateDashboardLocation = useCallback((query: string, status: string, page: number) => {
+    const params = new URLSearchParams();
+    if (query.trim()) {
+      params.set('suche', query.trim());
+    }
+    if (status !== 'all') {
+      params.set('status', status);
+    }
+    if (page > 1) {
+      params.set('seite', String(page));
+    }
+
+    const nextUrl = params.size ? `/admin?${params.toString()}` : '/admin';
+    window.history.replaceState(window.history.state, '', nextUrl);
+  }, []);
+
+  const openRequest = (requestId: string) => {
+    const returnTo = `${window.location.pathname}${window.location.search}`;
+    const detailParams = new URLSearchParams({zurueck: returnTo});
+    router.push(`/admin/anfragen/${encodeURIComponent(requestId)}?${detailParams.toString()}`);
+  };
 
   const addToast = useCallback((message: string, type: ToastType = 'info') => {
     toastCounterRef.current += 1;
@@ -133,24 +135,6 @@ export default function AdminDashboard({session}: {session: any}) {
     }, 350);
   };
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-  };
-
-  const updateRequestStatus = async (id: string, newStatus: string) => {
-    const {error} = await supabase.from('property_requests').update({status: newStatus}).eq('id', id);
-
-    if (!error) {
-      setRequests((prev) => prev.map((req) => (req.id === id ? {...req, status: newStatus as Request['status']} : req)));
-      if (selectedRequest?.id === id) {
-        setSelectedRequest({...selectedRequest, status: newStatus as Request['status']});
-      }
-      addToast(`Status erfolgreich auf "${newStatus}" gesetzt`, 'success');
-    } else {
-      addToast('Fehler beim Aktualisieren des Status', 'error');
-    }
-  };
-
   const deleteRequest = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setRequestToDelete(id);
@@ -164,33 +148,37 @@ export default function AdminDashboard({session}: {session: any}) {
 
     setIsDeleting(true);
 
-    const requestRecord = requests.find((request) => request.id === requestToDelete);
-    if (requestRecord?.documents?.length) {
-      const {error: documentError} = await supabase.storage.from('documents').remove(requestRecord.documents);
-      if (documentError) {
-        console.error('Error deleting request documents:', documentError);
-        addToast('Dokumente konnten nicht gelöscht werden', 'error');
-        setIsDeleting(false);
-        return;
+    try {
+      const {
+        data: {session: currentSession},
+        error: sessionError,
+      } = await supabase.auth.getSession();
+      if (sessionError || !currentSession?.access_token) {
+        throw new Error('Bitte melden Sie sich erneut im Adminbereich an.');
       }
-    }
 
-    const {error} = await supabase.from('property_requests').delete().eq('id', requestToDelete);
+      const response = await fetch(`/api/admin/requests/${encodeURIComponent(requestToDelete)}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${currentSession.access_token}`,
+        },
+        cache: 'no-store',
+      });
+      const payload = (await response.json()) as {success?: boolean; warning?: string; error?: string};
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error || 'Die Anfrage konnte nicht gelöscht werden.');
+      }
 
-    if (!error) {
       setRequests((prev) => prev.filter((req) => req.id !== requestToDelete));
-      if (selectedRequest?.id === requestToDelete) {
-        setSelectedRequest(null);
-      }
-      addToast('Anfrage erfolgreich gelöscht', 'success');
-    } else {
-      console.error('Error deleting request:', error);
-      addToast('Fehler beim Löschen der Anfrage', 'error');
+      addToast(payload.warning || 'Anfrage erfolgreich gelöscht', payload.warning ? 'info' : 'success');
+    } catch (deleteError) {
+      console.error('Error deleting request:', deleteError);
+      addToast(deleteError instanceof Error ? deleteError.message : 'Fehler beim Löschen der Anfrage', 'error');
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteModalOpen(false);
+      setRequestToDelete(null);
     }
-
-    setIsDeleting(false);
-    setIsDeleteModalOpen(false);
-    setRequestToDelete(null);
   };
 
   const filteredRequests = requests.filter((req) => {
@@ -260,76 +248,9 @@ export default function AdminDashboard({session}: {session: any}) {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[var(--color-bg)] text-[var(--color-ink)]">
-      <div className="pointer-events-none absolute left-[-10rem] top-[-7rem] h-[26rem] w-[26rem] rounded-full bg-[var(--color-accent-soft)] blur-[130px]" />
-      <div className="pointer-events-none absolute bottom-[-10rem] right-[-8rem] h-[24rem] w-[24rem] rounded-full bg-[var(--color-accent-soft)] blur-[130px]" />
-
-      <div className="relative z-10 flex min-h-screen flex-col gap-6 px-4 py-4 lg:flex-row lg:px-6">
-        <aside className="admin-card flex w-full shrink-0 flex-col rounded-[2rem] p-4 lg:w-72 lg:p-5">
-          <div className="flex items-center gap-3 rounded-[1.4rem] px-2 py-1">
-            <div className="theme-contrast-panel flex h-11 w-11 items-center justify-center rounded-[1rem] shadow-[0_16px_28px_-18px_rgba(0,0,0,0.35)]">
-              <ShieldCheck size={18} />
-            </div>
-            <div>
-              <div className="font-heading text-xl font-semibold tracking-[-0.04em] text-[var(--color-ink)]">Admin Portal</div>
-              <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[var(--color-text-muted)]">
-                Restnutzungsdauer
-              </div>
-            </div>
-          </div>
-
-          <div className="admin-card-muted mt-5 rounded-[1.6rem] p-4">
-            <div className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-[var(--color-text-muted)]">
-              Interner Bereich
-            </div>
-            <p className="mt-3 text-sm leading-7 text-[var(--color-text-muted)]">
-              Anfragen, Dokumente und Status im Überblick.
-            </p>
-          </div>
-
-          <nav className="mt-5 grid gap-2">
-            <button className="admin-solid-btn flex items-center gap-3 rounded-[1.15rem] px-4 py-3 text-sm font-semibold">
-              <LayoutDashboard size={18} />
-              Übersicht
-            </button>
-            <Link
-              href="/"
-              target="_blank"
-              className="admin-ghost-btn flex items-center gap-3 rounded-[1.15rem] px-4 py-3 text-sm font-semibold"
-            >
-              <ExternalLink size={18} />
-              Zur Website
-            </Link>
-          </nav>
-
-          <div className="mt-auto pt-6">
-            <div className="admin-card-muted rounded-[1.5rem] p-4">
-              <div className="flex items-center gap-3">
-                <div className="theme-panel-muted flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold text-[var(--color-ink)]">
-                  {session.user.email?.charAt(0).toUpperCase()}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-[var(--color-ink)]">{session.user.email}</p>
-                  <p className="mt-1 text-[10px] font-extrabold uppercase tracking-[0.2em] text-[var(--color-text-muted)]">
-                    Administrator
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={handleSignOut}
-              className="admin-ghost-btn mt-3 flex w-full items-center justify-center gap-2 rounded-[1.15rem] px-4 py-3 text-sm font-semibold"
-            >
-              <LogOut size={16} />
-              Abmelden
-            </button>
-          </div>
-        </aside>
-
-        <main className="min-w-0 flex-1">
-          <div className="mx-auto max-w-7xl">
-            <motion.div
+    <>
+      <div className="mx-auto max-w-7xl">
+        <motion.div
               initial={{opacity: 0, y: 12}}
               animate={{opacity: 1, y: 0}}
               transition={{duration: 0.45}}
@@ -357,8 +278,10 @@ export default function AdminDashboard({session}: {session: any}) {
                       placeholder="Suchen..."
                       value={searchQuery}
                       onChange={(e) => {
-                        setSearchQuery(e.target.value);
+                        const nextQuery = e.target.value;
+                        setSearchQuery(nextQuery);
                         setCurrentPage(1);
+                        updateDashboardLocation(nextQuery, statusFilter, 1);
                       }}
                       className="admin-input rounded-[1rem] py-3 pl-9 pr-4 text-sm"
                     />
@@ -369,8 +292,10 @@ export default function AdminDashboard({session}: {session: any}) {
                     <select
                       value={statusFilter}
                       onChange={(e) => {
-                        setStatusFilter(e.target.value);
+                        const nextStatus = e.target.value;
+                        setStatusFilter(nextStatus);
                         setCurrentPage(1);
+                        updateDashboardLocation(searchQuery, nextStatus, 1);
                       }}
                       className="admin-input appearance-none rounded-[1rem] py-3 pl-10 pr-9 text-sm"
                     >
@@ -532,7 +457,7 @@ export default function AdminDashboard({session}: {session: any}) {
                         <tr
                           key={req.id}
                           className="group cursor-pointer transition-colors hover:bg-[var(--color-surface)]"
-                          onClick={() => setSelectedRequest(req)}
+                          onClick={() => openRequest(req.id)}
                         >
                           <td className="px-6 py-4">
                             <div className="font-semibold text-[var(--color-ink)]">{req.name}</div>
@@ -559,16 +484,16 @@ export default function AdminDashboard({session}: {session: any}) {
                             <StatusBadge status={req.status} />
                           </td>
                           <td className="px-6 py-4 text-right">
-                            <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            <div className="flex items-center justify-end gap-2">
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setSelectedRequest(req);
+                                  openRequest(req.id);
                                 }}
-                                className="admin-ghost-btn rounded-[0.9rem] p-2"
-                                title="Details ansehen"
+                                className="admin-ghost-btn inline-flex min-h-10 items-center gap-2 rounded-[0.9rem] px-3 py-2 text-xs font-semibold"
                               >
-                                <MoreHorizontal size={18} />
+                                <ExternalLink size={15} />
+                                Öffnen
                               </button>
                               <button
                                 onClick={(e) => deleteRequest(req.id, e)}
@@ -599,7 +524,11 @@ export default function AdminDashboard({session}: {session: any}) {
 
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => setCurrentPage(Math.max(visiblePage - 1, 1))}
+                      onClick={() => {
+                        const nextPage = Math.max(visiblePage - 1, 1);
+                        setCurrentPage(nextPage);
+                        updateDashboardLocation(searchQuery, statusFilter, nextPage);
+                      }}
                       disabled={visiblePage === 1}
                       className="admin-ghost-btn rounded-[0.9rem] p-2 disabled:cursor-not-allowed disabled:opacity-50"
                     >
@@ -610,7 +539,10 @@ export default function AdminDashboard({session}: {session: any}) {
                       {Array.from({length: totalPages}, (_, i) => i + 1).map((page) => (
                         <button
                           key={page}
-                          onClick={() => setCurrentPage(page)}
+                          onClick={() => {
+                            setCurrentPage(page);
+                            updateDashboardLocation(searchQuery, statusFilter, page);
+                          }}
                           className={`h-9 w-9 rounded-[0.9rem] text-sm font-semibold transition-colors ${
                             visiblePage === page
                               ? 'bg-[var(--color-btn-bg)] text-[var(--color-btn-text)]'
@@ -623,7 +555,11 @@ export default function AdminDashboard({session}: {session: any}) {
                     </div>
 
                     <button
-                      onClick={() => setCurrentPage(Math.min(visiblePage + 1, totalPages))}
+                      onClick={() => {
+                        const nextPage = Math.min(visiblePage + 1, totalPages);
+                        setCurrentPage(nextPage);
+                        updateDashboardLocation(searchQuery, statusFilter, nextPage);
+                      }}
                       disabled={visiblePage === totalPages}
                       className="admin-ghost-btn rounded-[0.9rem] p-2 disabled:cursor-not-allowed disabled:opacity-50"
                     >
@@ -634,23 +570,6 @@ export default function AdminDashboard({session}: {session: any}) {
               )}
             </div>
           </div>
-        </main>
-      </div>
-
-      <AnimatePresence>
-        {selectedRequest && (
-          <RequestDetailsPanel
-            request={selectedRequest}
-            onClose={() => setSelectedRequest(null)}
-            onUpdateStatus={updateRequestStatus}
-            onDelete={(id) => {
-              setRequestToDelete(id);
-              setIsDeleteModalOpen(true);
-            }}
-            onToast={addToast}
-          />
-        )}
-      </AnimatePresence>
 
       <DeleteConfirmationModal
         isOpen={isDeleteModalOpen}
@@ -663,7 +582,7 @@ export default function AdminDashboard({session}: {session: any}) {
       />
 
       <ToastContainer toasts={toasts} onClose={removeToast} />
-    </div>
+    </>
   );
 }
 

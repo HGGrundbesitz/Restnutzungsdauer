@@ -7,3 +7,15 @@ coverage/
 !.env.example
 ROADMAP.md
 SUPABASE_TEAM_AUTH.md
+
+# Local build and development state
+*.tsbuildinfo
+*.pid
+
+# Private project references and conversation exports
+/public/RND-Gutachten.pdf
+/public/Ersteinschaetzung_RND_Spezifikation.pdf
+/public/pasted-text.txt
+
+# Snapshot of the live Supabase project; canonical migrations stay tracked
+/supabase/migrations/supabasefiles.sql

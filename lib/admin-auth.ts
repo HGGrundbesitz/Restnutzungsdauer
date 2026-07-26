@@ -18,7 +18,7 @@ export function getAuthErrorMessage(message?: string | null) {
   }
 
   if (normalizedMessage.includes('email not confirmed')) {
-    return 'Bitte bestaetigen Sie zuerst Ihre E-Mail-Adresse.';
+    return 'Bitte bestätigen Sie zuerst Ihre E-Mail-Adresse.';
   }
 
   if (normalizedMessage.includes('security purposes')) {
@@ -26,15 +26,15 @@ export function getAuthErrorMessage(message?: string | null) {
   }
 
   if (normalizedMessage.includes('same password')) {
-    return 'Bitte waehlen Sie ein neues Passwort, das sich vom alten unterscheidet.';
+    return 'Bitte wählen Sie ein neues Passwort, das sich vom alten unterscheidet.';
   }
 
   if (normalizedMessage.includes('weak password')) {
-    return 'Bitte waehlen Sie ein staerkeres Passwort mit mindestens 10 Zeichen.';
+    return 'Bitte wählen Sie ein stärkeres Passwort mit mindestens 10 Zeichen.';
   }
 
   if (normalizedMessage.includes('session not found')) {
-    return 'Der Reset-Link ist ungueltig oder abgelaufen. Fordern Sie bitte einen neuen Link an.';
+    return 'Der Reset-Link ist ungültig oder abgelaufen. Fordern Sie bitte einen neuen Link an.';
   }
 
   return message;

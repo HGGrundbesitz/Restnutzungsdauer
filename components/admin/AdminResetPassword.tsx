@@ -68,12 +68,12 @@ export default function AdminResetPassword() {
     e.preventDefault();
 
     if (password.length < 10) {
-      setError('Bitte waehlen Sie ein Passwort mit mindestens 10 Zeichen.');
+      setError('Bitte wählen Sie ein Passwort mit mindestens 10 Zeichen.');
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Die beiden Passwoerter stimmen nicht ueberein.');
+      setError('Die beiden Passwörter stimmen nicht überein.');
       return;
     }
 
@@ -106,7 +106,7 @@ export default function AdminResetPassword() {
       {checking ? (
         <div className="admin-card-muted flex items-center justify-center gap-3 rounded-[1rem] px-4 py-4 text-sm text-[var(--color-text-muted)]">
           <Loader2 size={18} className="animate-spin text-[var(--color-accent)]" />
-          Recovery-Session wird geprueft
+          Recovery-Session wird geprüft
         </div>
       ) : !hasRecoverySession ? (
         <div className="space-y-5">

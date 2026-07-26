@@ -13,7 +13,7 @@ export function getResultCopy(result: RndResult) {
   }
 
   return {
-    title: 'Ihre rechnerische Ersteinschätzung',
-    body: `Auf Grundlage Ihrer Angaben ergibt sich nach dem hinterlegten ImmoWertV-Modell eine modifizierte wirtschaftliche Restnutzungsdauer von rund ${result.modifiedRnd} Jahren. Ob dieser Wert im konkreten Fall fachlich tragfähig ist, hängt insbesondere vom Objektzustand, den Unterlagen und der sachverständigen Würdigung ab.`,
+    title: 'Ihre Ersteinschätzung',
+    body: `Auf Basis Ihrer Angaben berechnet sich eine wirtschaftliche RND von ${result.modifiedRnd} Jahren. Wir gehen davon aus, dass der Nachweis einer kürzeren RND im Sinne des § 7 EStG zu erbringen ist. Eine höhere steuerliche Abschreibung kann abhängig von den jeweiligen Voraussetzungen des Einzelfalls möglich sein.`,
   };
 }

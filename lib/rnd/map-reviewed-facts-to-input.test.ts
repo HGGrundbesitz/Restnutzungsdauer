@@ -1,8 +1,17 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {mapReviewedFactsToInput, modernizationPeriodFromYear} from './map-reviewed-facts-to-input.ts';
-import type {DocumentConflictRecord, DocumentFactRecord, DocumentFieldKey} from './document-analysis/types.ts';
-import type {RndInput} from './types.ts';
+import {
+  mapReviewedFactsToInput,
+  modernizationAnswerFromYear,
+  modernizationPeriodFromYear,
+} from './map-reviewed-facts-to-input.ts';
+import type {
+  DocumentConflictRecord,
+  DocumentFactRecord,
+  DocumentFieldKey,
+  FactMetadata,
+} from './document-analysis/types.ts';
+import {RND_INPUT_V2_SCHEMA_VERSION, type RndInput, type RndInputV2} from './types.ts';
 
 const originalInput: RndInput = {
   buildingTypeCode: 'single_family',
@@ -21,11 +30,29 @@ const originalInput: RndInput = {
   coreRenovation: false,
 };
 
+const originalInputV2: RndInputV2 = {
+  schemaVersion: RND_INPUT_V2_SCHEMA_VERSION,
+  buildingTypeCode: 'single_family',
+  referenceDate: '2026-01-01',
+  constructionYear: 1980,
+  modernization: {
+    roof: 0,
+    windows: 0,
+    pipes: 0,
+    heating: 0,
+    exteriorWalls: 0,
+    bathrooms: 0,
+    interior: 0,
+    floorplan: 0,
+  },
+};
+
 function reviewedFact(
   id: string,
   fieldKey: DocumentFieldKey,
   value: number | string,
   reviewStatus: DocumentFactRecord['review_status'] = 'accepted',
+  factMetadata: FactMetadata = {proofStatus: 'proven'},
 ) {
   return {
     id,
@@ -33,6 +60,7 @@ function reviewedFact(
     normalized_value: value,
     reviewed_value: value,
     review_status: reviewStatus,
+    fact_metadata: factMetadata,
   };
 }
 
@@ -100,6 +128,66 @@ test('converts modernization years relative to the approved reference date', () 
   assert.equal(modernizationPeriodFromYear(2030, '2026-01-01'), null);
 });
 
+test('maps reviewed modernization years to exact V2 answer boundaries', () => {
+  assert.equal(modernizationAnswerFromYear(2010, '2026-01-01'), 0);
+  assert.equal(modernizationAnswerFromYear(2011, '2026-01-01'), 1);
+  assert.equal(modernizationAnswerFromYear(2016, '2026-01-01'), 1);
+  assert.equal(modernizationAnswerFromYear(2017, '2026-01-01'), 2);
+  assert.equal(modernizationAnswerFromYear(2030, '2026-01-01'), null);
+
+  const preview = mapReviewedFactsToInput({
+    originalInput: originalInputV2,
+    originalProperty: {},
+    facts: [
+      reviewedFact('roof', 'roof_modernization_year', 2010),
+      reviewedFact('windows', 'window_modernization_year', 2016),
+      reviewedFact('heating', 'heating_modernization_year', 2022),
+      reviewedFact(
+        'floorplan',
+        'floorplan_modernization_year',
+        2020,
+        'accepted',
+        {proofStatus: 'proven', scopeDescription: 'Grundriss teilweise verändert'},
+      ),
+    ],
+    conflicts: [],
+  });
+
+  assert.equal(preview.input.modernization.roof, 0);
+  assert.equal(preview.input.modernization.windows, 1);
+  assert.equal(preview.input.modernization.heating, 2);
+  assert.equal(preview.input.modernization.floorplan, 1);
+});
+
+test('does not map unproven V2 facts and warns on partially proven facts', () => {
+  const preview = mapReviewedFactsToInput({
+    originalInput: originalInputV2,
+    originalProperty: {},
+    facts: [
+      reviewedFact(
+        'roof',
+        'roof_modernization_year',
+        2022,
+        'accepted',
+        {proofStatus: 'not_proven'},
+      ),
+      reviewedFact(
+        'windows',
+        'window_modernization_year',
+        2022,
+        'accepted',
+        {proofStatus: 'partially_proven'},
+      ),
+    ],
+    conflicts: [],
+  });
+
+  assert.equal(preview.input.modernization.roof, 0);
+  assert.equal(preview.input.modernization.windows, 2);
+  assert.match(preview.warnings.join(' '), /nicht nachgewiesene Angabe/);
+  assert.match(preview.warnings.join(' '), /teilweise nachgewiesen/);
+});
+
 function conflict(
   status: DocumentConflictRecord['resolution_status'],
   resolvedValue: number | null,
@@ -111,4 +199,3 @@ function conflict(
     resolved_value: resolvedValue,
   };
 }
-

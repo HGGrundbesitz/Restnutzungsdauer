@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {parseDocumentExtractionOutput} from './schema.ts';
+import {
+  DOCUMENT_EXTRACTION_JSON_SCHEMA,
+  parseDocumentExtractionOutput,
+} from './schema.ts';
 
 const context = {
   documentPath: 'rnd-estimates/11111111-1111-4111-8111-111111111111/bauakte.pdf',
@@ -22,6 +25,14 @@ function validOutput(overrides: Record<string, unknown> = {}) {
         evidenceText: 'Das mittlere Baujahr wird mit etwa 1975 ermittelt.',
         confidence: 0.94,
         extractionNotes: 'Im Dokument als ungefähr bezeichnet.',
+        metadata: {
+          yearFrom: 1975,
+          yearTo: 1975,
+          scopePercent: null,
+          scopeDescription: null,
+          evidenceQuality: 'high',
+          proofStatus: 'proven',
+        },
         status: 'pending_review',
         ...overrides,
       },
@@ -64,3 +75,16 @@ test('rejects malformed or extended AI objects instead of storing them', () => {
   );
 });
 
+test('keeps every strict metadata property required and nullable', () => {
+  const metadataSchema =
+    DOCUMENT_EXTRACTION_JSON_SCHEMA.properties.facts.items.properties.metadata;
+  const propertyNames = Object.keys(metadataSchema.properties).sort();
+
+  assert.deepEqual([...metadataSchema.required].sort(), propertyNames);
+  for (const property of Object.values(metadataSchema.properties)) {
+    assert.ok(
+      property.anyOf.some((variant) => variant.type === 'null'),
+      'Every optional metadata property must be represented as nullable.',
+    );
+  }
+});

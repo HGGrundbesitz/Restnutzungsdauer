@@ -1,9 +1,12 @@
 'use client';
 
+import Image from 'next/image';
 import {ArrowRight, CheckCircle2} from 'lucide-react';
-import {motion} from 'motion/react';
+import {motion, useReducedMotion} from 'motion/react';
 
 export default function RequestForm({embedded = false}: {embedded?: boolean}) {
+  const reduceMotion = useReducedMotion();
+
   return (
     <section id="anfrage" className={embedded ? 'relative z-10 h-full scroll-mt-32' : 'relative z-10 mx-auto max-w-[1180px] px-4 py-24 sm:px-6 md:py-32'}>
       {!embedded ? <div className="pointer-events-none absolute inset-x-[8%] top-16 -z-10 h-[360px] rounded-full bg-[var(--color-accent-soft)] opacity-70 blur-[120px]" /> : null}
@@ -19,11 +22,20 @@ export default function RequestForm({embedded = false}: {embedded?: boolean}) {
           </a>
         </div>
 
-        <div aria-hidden="true" className="relative z-10 mt-12 h-48 w-full">
-          <div className="absolute bottom-0 right-1 h-36 w-[78%] rotate-[5deg] rounded-[1.8rem] border border-white/14 bg-[linear-gradient(145deg,rgba(55,112,255,0.72),rgba(255,255,255,0.08))] shadow-[0_28px_70px_-28px_rgba(0,0,0,0.62)]" />
-          <div className="absolute bottom-3 right-[8%] h-40 w-[78%] rotate-[-3deg] rounded-[1.8rem] border border-white/18 bg-[linear-gradient(145deg,rgba(230,239,255,0.36),rgba(74,130,255,0.18))] backdrop-blur-xl before:absolute before:-top-7 before:left-8 before:h-9 before:w-28 before:rounded-t-2xl before:border before:border-b-0 before:border-white/18 before:bg-[rgba(104,149,255,0.34)]" />
-          <div className="absolute bottom-8 right-[16%] flex h-20 w-20 items-center justify-center rounded-[1.6rem] border border-white/16 bg-white/10 text-blue-200 backdrop-blur-xl"><CheckCircle2 size={34} /></div>
-        </div>
+        <motion.div
+          aria-hidden="true"
+          animate={reduceMotion ? undefined : {y: [0, -6, 0], opacity: [0.92, 1, 0.92]}}
+          transition={reduceMotion ? undefined : {duration: 7, repeat: Infinity, ease: 'easeInOut'}}
+          className="relative z-10 mt-10 min-h-52 w-full overflow-hidden rounded-[1.7rem] border border-white/8 bg-[#0b1f3f] sm:min-h-64"
+        >
+          <Image
+            src="/rnd/faq-answer-illustration.png"
+            alt=""
+            fill
+            sizes="(max-width: 1024px) 100vw, 42vw"
+            className="object-cover object-center"
+          />
+        </motion.div>
       </motion.div>
     </section>
   );

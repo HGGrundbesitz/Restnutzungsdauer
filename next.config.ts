@@ -6,6 +6,18 @@ const publicSupabaseKey =
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  async headers() {
+    return [
+      {
+        source: '/admin/:path*',
+        headers: [{key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive'}],
+      },
+      {
+        source: '/api/:path*',
+        headers: [{key: 'X-Robots-Tag', value: 'noindex, nofollow, nosnippet'}],
+      },
+    ];
+  },
   // Only URL and publishable key are exposed. SUPABASE_SECRET_KEY stays server-only.
   env: {
     NEXT_PUBLIC_SUPABASE_URL: publicSupabaseUrl,
@@ -17,14 +29,13 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  // Allow access to remote image placeholder.
   images: {
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'picsum.photos',
         port: '',
-        pathname: '/**', // This allows any path under the hostname
+        pathname: '/**',
       },
     ],
   },

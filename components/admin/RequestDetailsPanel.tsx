@@ -219,6 +219,8 @@ export default function RequestDetailsPanel({
                       <EstimateValue label="Gebäudealter" value={`${estimate.actual_age} Jahre`} />
                       <EstimateValue label="Vor Anpassung" value={estimate.preliminary_rnd === null ? '–' : `${estimate.preliminary_rnd} Jahre`} />
                       <EstimateValue label="Modernisierung" value={`${estimate.modernization_points_rounded} von 20`} />
+                      <EstimateValue label="Rechenmodell" value={getModelVersionLabel(estimate.model_version)} />
+                      <EstimateValue label="Methode" value={getCalculationMethodLabel(estimate.calculation_method)} />
                     </div>
                     <p className="mt-4 text-xs leading-5 text-[var(--color-text-muted)]">
                       Berechnungsdatum: {new Date(`${estimate.stichtag}T00:00:00`).toLocaleDateString('de-DE')}
@@ -319,6 +321,19 @@ export default function RequestDetailsPanel({
 function getSourceLabel(source?: string | null) {
   if (source === 'rnd_estimate') return 'RND-Ersteinschätzung';
   return source === 'quick_check' ? 'Schnellcheck' : 'Anfrageformular';
+}
+
+function getModelVersionLabel(version: string) {
+  if (version === 'immowertv-clickflow-v2') return 'Klick-Flow V2';
+  if (version === 'immowertv-2022-immowerta-v1') return 'Bestandsmodell V1';
+  return version;
+}
+
+function getCalculationMethodLabel(method: string) {
+  if (method === 'preliminary') return 'GND minus Gebäudealter';
+  if (method === 'immowertv_formula') return 'Koeffizientenformel';
+  if (method === 'manual_review') return 'Fachliche Prüfung';
+  return method;
 }
 
 function getReviewWarning(warning: RndEstimate['warnings'][number]) {
