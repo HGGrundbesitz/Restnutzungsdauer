@@ -63,7 +63,7 @@ export default function BuildingTypeStep({
         </div>
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">Gebäudeart</p>
         <h3 className="mt-2 text-balance font-heading text-3xl font-semibold leading-[1.06] tracking-[-0.04em] text-[var(--color-ink)] sm:text-4xl lg:text-[2.75rem]">
-          {selectedCategory ? 'Welche Gebäudeart ist es?' : 'Zu welcher Kategorie gehört das Gebäude?'}
+          {selectedCategory ? 'Um welche Gebäudeart handelt es sich?' : 'Zu welcher Kategorie gehört das Gebäude?'}
         </h3>
       </div>
 
