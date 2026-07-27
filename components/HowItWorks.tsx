@@ -1,6 +1,6 @@
 'use client';
 
-import {Banknote, FilePlus, PenSquare, ShieldCheck, Video, ZoomIn} from 'lucide-react';
+import {Banknote, FilePlus, PenSquare, ZoomIn} from 'lucide-react';
 import {motion, useReducedMotion} from 'motion/react';
 
 const steps = [
@@ -45,12 +45,7 @@ export default function HowItWorks() {
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-[var(--color-text-muted)]">Von der Anfrage bis zum fertigen Gutachten – digital vorbereitet und fachlich sauber eingeordnet.</p>
         </motion.div>
 
-        <motion.div initial={{opacity: 0, y: reduceMotion ? 0 : 18}} whileInView={{opacity: 1, y: 0}} viewport={{once: true, margin: '-100px'}} transition={{duration: reduceMotion ? 0 : 0.68, delay: reduceMotion ? 0 : 0.08}} className="mx-auto mt-10 grid max-w-5xl gap-3 rounded-[1.7rem] border border-[var(--color-border)] bg-white/78 p-4 shadow-[0_24px_70px_-48px_rgba(15,23,42,0.3)] backdrop-blur-xl md:grid-cols-2">
-          <ProcessNote icon={Video} title="Digital, wenn es fachlich genügt" copy="Viele Fälle können digital vorbereitet werden, wenn Unterlagen und Fotos ausreichend aussagekräftig sind." />
-          <ProcessNote icon={ShieldCheck} title="Vor Ort, wenn sinnvoll" copy="Falls Objektzustand oder Plausibilität es erfordern, wird eine Vor-Ort-Prüfung transparent empfohlen." />
-        </motion.div>
-
-        <div className="relative mx-auto mt-20 max-w-[1280px] md:mt-24">
+        <div className="relative mx-auto mt-14 max-w-[1280px] md:mt-20">
           <div aria-hidden="true" className="absolute bottom-4 left-[1.55rem] top-4 w-px bg-[rgba(37,99,235,0.2)] md:left-[12.5%] md:right-[12.5%] md:top-[2rem] md:h-px md:w-auto">
             <motion.span initial={{scaleY: 0}} whileInView={{scaleY: 1}} viewport={{once: true}} transition={{duration: reduceMotion ? 0 : 1.1, ease: [0.22, 1, 0.36, 1]}} className="block h-full w-px origin-top bg-[var(--color-accent)] md:h-px md:w-full md:origin-left md:[transform:scaleX(1)]" />
           </div>
@@ -72,14 +67,5 @@ export default function HowItWorks() {
         </div>
       </div>
     </section>
-  );
-}
-
-function ProcessNote({icon: Icon, title, copy}: {icon: typeof Video; title: string; copy: string}) {
-  return (
-    <div className="flex items-start gap-4 rounded-[1.25rem] p-4">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--color-accent-soft)] text-[var(--color-accent)]"><Icon size={20} /></span>
-      <div><h3 className="font-heading text-base font-semibold text-[var(--color-ink)]">{title}</h3><p className="mt-1.5 text-sm leading-6 text-[var(--color-text-muted)]">{copy}</p></div>
-    </div>
   );
 }
