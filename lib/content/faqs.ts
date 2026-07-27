@@ -4,7 +4,7 @@ export const FAQS = [
     answer: 'Eine Anerkennung kann nicht garantiert werden. Wichtig ist eine nachvollziehbare, objektbezogene Herleitung. Das Gutachten wird so aufbereitet, dass die Annahmen und Bewertungslogik für die Einreichung verständlich dokumentiert sind. Die steuerliche Einordnung sollte mit Ihrer Steuerberatung erfolgen.',
   },
   {
-    question: 'Welche Unterlagen muss ich beibringen?',
+    question: 'Welche Unterlagen muss ich bereitstellen?',
     answer: 'Hilfreich sind Baujahr, Grundrisse, Wohn- und Nutzflächenangaben, Kaufvertrag oder Kaufpreisaufteilung, Modernisierungsnachweise, Fotos sowie Hinweise zu Schäden oder Sanierungsstau. Für den ersten Check müssen nicht alle Dokumente sofort vorliegen.',
   },
   {
