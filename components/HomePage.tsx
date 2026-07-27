@@ -12,7 +12,6 @@ import HowItWorks from '@/components/HowItWorks';
 import LegalTrustBox from '@/components/LegalTrustBox';
 import QuickCheck from '@/components/QuickCheck';
 import RequestForm from '@/components/RequestForm';
-import RequiredDocuments from '@/components/RequiredDocuments';
 
 export default function HomePage() {
   const quickCheckRef = useRef<HTMLDivElement>(null);
@@ -46,7 +45,6 @@ export default function HomePage() {
         >
           <QuickCheck />
         </motion.div>
-        <RequiredDocuments />
         <LegalTrustBox />
         <AfaComparison />
         <HowItWorks />

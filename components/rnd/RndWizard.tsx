@@ -39,7 +39,10 @@ import {
   RND_WIZARD_DRAFT_STORAGE_KEY,
 } from '@/lib/rnd/wizard-draft';
 import {isSupabaseConfigured, supabase} from '@/lib/supabase';
-import BuildingTypeStep from './BuildingTypeStep';
+import BuildingTypeStep, {
+  getBuildingCategoryForType,
+  type PublicBuildingCategory,
+} from './BuildingTypeStep';
 import ConstructionYearStep from './ConstructionYearStep';
 import ContactStep from './ContactStep';
 import DocumentUploadStep, {MAX_DOCUMENTS, MAX_DOCUMENT_SIZE} from './DocumentUploadStep';
@@ -65,6 +68,7 @@ export default function RndWizard() {
   const [step, setStep] = useState<WizardStep>('buildingType');
   const [referenceDate, setReferenceDate] = useState(() => getCurrentReferenceDate());
   const [buildingTypeCode, setBuildingTypeCode] = useState<OfficialBuildingTypeCode | ''>('');
+  const [buildingCategory, setBuildingCategory] = useState<PublicBuildingCategory | null>(null);
   const [constructionYear, setConstructionYear] = useState<number | ''>('');
   const [modernization, setModernization] = useState<Partial<ModernizationAnswersV2>>({});
   const [property, setProperty] = useState<RndPropertyContext>({});
@@ -106,6 +110,7 @@ export default function RndWizard() {
       setStep(draft.step);
       setReferenceDate(draft.referenceDate);
       setBuildingTypeCode(draft.buildingTypeCode);
+      setBuildingCategory(getBuildingCategoryForType(draft.buildingTypeCode));
       setConstructionYear(draft.constructionYear);
       setModernization(draft.modernization);
       setProperty(draft.property);
@@ -174,6 +179,10 @@ export default function RndWizard() {
     if (step === 'contact') return goTo('result');
     if (step === 'documents') return goTo('contact');
     if (step === 'review') return goTo('documents');
+    if (step === 'buildingType' && buildingCategory) {
+      setBuildingCategory(null);
+      return;
+    }
     const index = CALCULATOR_STEPS.indexOf(step as CalculatorStep);
     if (index > 0) goTo(CALCULATOR_STEPS[index - 1]);
   };
@@ -353,6 +362,7 @@ export default function RndWizard() {
     setStep('buildingType');
     setReferenceDate(getCurrentReferenceDate());
     setBuildingTypeCode('');
+    setBuildingCategory(null);
     setConstructionYear('');
     setModernization({});
     setProperty({});
@@ -394,7 +404,7 @@ export default function RndWizard() {
           <WizardProgress
             currentStep={calculatorIndex + 1}
             totalSteps={CALCULATOR_STEPS.length}
-            canGoBack={calculatorIndex > 0}
+            canGoBack={calculatorIndex > 0 || (step === 'buildingType' && buildingCategory !== null)}
             onBack={goBack}
           />
         ) : (
@@ -423,7 +433,12 @@ export default function RndWizard() {
               transition={{duration: reduceMotion ? 0 : 0.26, ease: [0.16, 1, 0.3, 1]}}
             >
               {step === 'buildingType' ? (
-                <BuildingTypeStep value={buildingTypeCode} onChange={selectBuildingType} />
+                <BuildingTypeStep
+                  value={buildingTypeCode}
+                  category={buildingCategory}
+                  onCategoryChange={setBuildingCategory}
+                  onChange={selectBuildingType}
+                />
               ) : null}
               {step === 'constructionYear' ? (
                 <ConstructionYearStep

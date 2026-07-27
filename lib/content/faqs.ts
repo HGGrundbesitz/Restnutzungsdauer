@@ -9,7 +9,7 @@ export const FAQS = [
   },
   {
     question: 'Brauche ich eine Vor-Ort-Besichtigung?',
-    answer: 'Ob eine Vor-Ort-Besichtigung erforderlich ist, hängt vom Objekt, der Unterlagenlage und der fachlichen Plausibilität ab. Die digitale Ersteinschätzung hilft, den sinnvollen Prüfungsumfang früh zu bestimmen.',
+    answer: 'Ja, um ein fundiertes Gutachten zu erstellen, ist eine Vor-Ort-Besichtigung nötig.',
   },
   {
     question: 'Für wen lohnt sich ein Restnutzungsdauer-Gutachten eher nicht?',
