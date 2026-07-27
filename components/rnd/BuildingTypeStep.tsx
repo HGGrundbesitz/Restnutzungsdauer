@@ -67,6 +67,11 @@ export default function BuildingTypeStep({
         </h3>
       </div>
 
+
+
+
+
+
       <AnimatePresence mode="wait" initial={false}>
         {selectedCategory ? (
           <motion.div
